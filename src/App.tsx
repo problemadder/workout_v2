@@ -6,8 +6,9 @@ import { WorkoutLogger } from './components/WorkoutLogger';
 import { TemplateManager } from './components/TemplateManager';
 import { Stats } from './components/Stats';
 import { ImportExport } from './components/ImportExport';
+import { Targets } from './components/Targets';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { Exercise, Workout, WorkoutStats, WorkoutTemplate } from './types';
+import { Exercise, Workout, WorkoutStats, WorkoutTemplate, WorkoutTarget } from './types';
 import { defaultExercises } from './data/defaultExercises';
 import { isToday, getDaysAgo } from './utils/dateUtils';
 
@@ -16,6 +17,7 @@ function App() {
   const [exercises, setExercises] = useLocalStorage<Exercise[]>('abs-exercises', []);
   const [workouts, setWorkouts] = useLocalStorage<Workout[]>('abs-workouts', []);
   const [templates, setTemplates] = useLocalStorage<WorkoutTemplate[]>('abs-templates', []);
+  const [targets, setTargets] = useLocalStorage<WorkoutTarget[]>('abs-targets', []);
   const [pendingWorkout, setPendingWorkout] = useState<{
     sets: Array<{ exerciseId: string; reps: number }>;
     notes: string;
@@ -181,6 +183,27 @@ function App() {
     setActiveTab('workout');
   };
 
+  const handleAddTarget = (targetData: Omit<WorkoutTarget, 'id' | 'createdAt'>) => {
+    const newTarget: WorkoutTarget = {
+      ...targetData,
+      id: crypto.randomUUID(),
+      createdAt: new Date()
+    };
+    setTargets([...targets, newTarget]);
+  };
+
+  const handleEditTarget = (id: string, targetData: Omit<WorkoutTarget, 'id' | 'createdAt'>) => {
+    setTargets(targets.map(target => 
+      target.id === id 
+        ? { ...target, ...targetData }
+        : target
+    ));
+  };
+
+  const handleDeleteTarget = (id: string) => {
+    setTargets(targets.filter(target => target.id !== id));
+  };
+
   const handleSaveWorkout = (workoutData: Omit<Workout, 'id'>) => {
     const newWorkout: Workout = {
       ...workoutData,
@@ -306,6 +329,17 @@ function App() {
             workouts={sortedWorkouts}
             exercises={exercises}
             stats={stats}
+          />
+        )}
+
+        {activeTab === 'targets' && (
+          <Targets
+            targets={targets}
+            exercises={exercises}
+            workouts={workouts}
+            onAddTarget={handleAddTarget}
+            onEditTarget={handleEditTarget}
+            onDeleteTarget={handleDeleteTarget}
           />
         )}
 

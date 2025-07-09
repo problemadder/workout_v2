@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Dumbbell, Calendar, BarChart3, BookOpen, Upload } from 'lucide-react';
+import { Home, Dumbbell, Calendar, BarChart3, BookOpen, Upload, Target } from 'lucide-react';
 
 interface NavigationProps {
   activeTab: string;
@@ -12,6 +12,7 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
     { id: 'exercises', label: 'Exercises', icon: Dumbbell },
     { id: 'templates', label: 'Templates', icon: BookOpen },
     { id: 'workout', label: 'Workout', icon: Calendar },
+    { id: 'targets', label: 'Targets', icon: Target },
     { id: 'stats', label: 'Stats', icon: BarChart3 },
     { id: 'import', label: 'Import', icon: Upload }
   ];
