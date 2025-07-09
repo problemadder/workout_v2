@@ -45,7 +45,7 @@ export interface WorkoutTarget {
   category?: Exercise['category'];
   exerciseId?: string;
   targetValue: number;
-  period: 'daily' | 'weekly' | 'monthly';
+  period: 'monthly' | 'yearly';
   isActive: boolean;
   createdAt: Date;
 }
