@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Target, TrendingUp, Calendar, CheckCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Target, TrendingUp, Calendar, CheckCircle, Clock, Award } from 'lucide-react';
 import { WorkoutTarget, Exercise, Workout } from '../types';
 
 interface TargetsProps {
@@ -101,13 +101,16 @@ export function Targets({ targets, exercises, workouts, onAddTarget, onEditTarge
   const calculateProgress = (target: WorkoutTarget) => {
     const now = new Date();
     let startDate: Date;
+    let endDate: Date;
     
     switch (target.period) {
       case 'monthly':
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         break;
       case 'yearly':
         startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31);
         break;
     }
 
@@ -146,15 +149,80 @@ export function Targets({ targets, exercises, workouts, onAddTarget, onEditTarge
       });
     }
 
-    const percentage = Math.min((currentValue / target.targetValue) * 100, 100);
+    const percentage = (currentValue / target.targetValue) * 100;
     const isCompleted = currentValue >= target.targetValue;
     const isExceeded = currentValue > target.targetValue;
 
-    return { currentValue, percentage, isCompleted, isExceeded };
+    // Calculate days remaining
+    const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysPassed = Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysRemaining = Math.max(0, totalDays - daysPassed);
+
+    // Determine status and color
+    let status: 'completed' | 'on-track' | 'moderate' | 'needs-attention';
+    let statusColor: string;
+    let statusIcon: string;
+    let progressBarColor: string;
+
+    if (isCompleted) {
+      status = 'completed';
+      statusColor = 'text-solarized-green';
+      statusIcon = '🟢';
+      progressBarColor = 'bg-solarized-green';
+    } else if (percentage >= 75) {
+      status = 'on-track';
+      statusColor = 'text-solarized-blue';
+      statusIcon = '🔵';
+      progressBarColor = 'bg-solarized-blue';
+    } else if (percentage >= 50) {
+      status = 'moderate';
+      statusColor = 'text-solarized-yellow';
+      statusIcon = '🟡';
+      progressBarColor = 'bg-solarized-yellow';
+    } else {
+      status = 'needs-attention';
+      statusColor = 'text-solarized-orange';
+      statusIcon = '🟠';
+      progressBarColor = 'bg-solarized-orange';
+    }
+
+    // If exceeded, use violet color
+    if (isExceeded) {
+      statusColor = 'text-solarized-violet';
+      statusIcon = '🟣';
+      progressBarColor = 'bg-solarized-violet';
+    }
+
+    return { 
+      currentValue, 
+      percentage, 
+      isCompleted, 
+      isExceeded, 
+      daysRemaining,
+      status,
+      statusColor,
+      statusIcon,
+      progressBarColor
+    };
   };
 
   const getCategoryStyle = (category: string) => {
     return categories.find(c => c.value === category)?.color || 'bg-gray-100 text-gray-800 border-gray-200';
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'Completed';
+      case 'on-track':
+        return 'On Track';
+      case 'moderate':
+        return 'Moderate Progress';
+      case 'needs-attention':
+        return 'Needs Attention';
+      default:
+        return '';
+    }
   };
 
   return (
@@ -184,7 +252,7 @@ export function Targets({ targets, exercises, workouts, onAddTarget, onEditTarge
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full p-3 border border-solarized-base1 rounded-lg focus:ring-2 focus:ring-solarized-blue focus:border-transparent bg-solarized-base3 text-solarized-base02"
-                placeholder="e.g., Weekly Abs Goal"
+                placeholder="e.g., Monthly Abs Goal"
                 required
                 autoFocus
               />
@@ -212,7 +280,7 @@ export function Targets({ targets, exercises, workouts, onAddTarget, onEditTarge
                 </label>
                 <select
                   value={formData.period}
-                  onChange={(e) => setFormData({ ...formData, period: e.target.value as 'daily' | 'weekly' | 'monthly' })}
+                  onChange={(e) => setFormData({ ...formData, period: e.target.value as 'monthly' | 'yearly' })}
                   className="w-full p-3 border border-solarized-base1 rounded-lg focus:ring-2 focus:ring-solarized-blue focus:border-transparent bg-solarized-base3 text-solarized-base02"
                   required
                 >
@@ -301,7 +369,7 @@ export function Targets({ targets, exercises, workouts, onAddTarget, onEditTarge
       )}
 
       {/* Targets List */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {targets.length === 0 ? (
           <div className="text-center py-12">
             <Target size={48} className="mx-auto text-solarized-base1 mb-4" />
@@ -316,17 +384,27 @@ export function Targets({ targets, exercises, workouts, onAddTarget, onEditTarge
               const exercise = target.exerciseId ? exercises.find(ex => ex.id === target.exerciseId) : null;
               
               return (
-                <div key={target.id} className="bg-solarized-base2 rounded-xl p-4 shadow-lg border border-solarized-base1">
-                  <div className="flex items-start justify-between mb-3">
+                <div key={target.id} className="bg-solarized-base2 rounded-xl p-6 shadow-lg border border-solarized-base1">
+                  {/* Header with Title and Status */}
+                  <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-solarized-base02">{target.name}</h3>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-bold text-lg text-solarized-base02">{target.name}</h3>
                         {progress.isCompleted && (
-                          <CheckCircle size={16} className={progress.isExceeded ? 'text-solarized-violet' : 'text-solarized-green'} />
+                          <div className="flex items-center gap-1">
+                            <Award size={18} className={progress.isExceeded ? 'text-solarized-violet' : 'text-solarized-green'} />
+                            <span className={`text-sm font-medium ${progress.isExceeded ? 'text-solarized-violet' : 'text-solarized-green'}`}>
+                              {progress.isExceeded ? 'EXCEEDED!' : 'COMPLETED!'}
+                            </span>
+                          </div>
                         )}
                       </div>
                       
-                      <div className="flex items-center gap-2 mb-2">
+                      {/* Status Badge */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className={`text-sm font-medium ${progress.statusColor} flex items-center gap-1`}>
+                          {progress.statusIcon} {getStatusText(progress.status)}
+                        </span>
                         <span className="text-xs px-2 py-1 rounded-full bg-solarized-blue/10 text-solarized-blue border border-solarized-blue/20">
                           {target.period}
                         </span>
@@ -341,42 +419,6 @@ export function Targets({ targets, exercises, workouts, onAddTarget, onEditTarge
                           </span>
                         )}
                       </div>
-
-                      <div className="mb-2">
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="text-solarized-base01">
-                            {progress.currentValue} / {target.targetValue} {target.type}
-                          </span>
-                          <span className={`font-medium ${
-                            progress.isExceeded ? 'text-solarized-violet' : 
-                            progress.isCompleted ? 'text-solarized-green' : 
-                            'text-solarized-base02'
-                          }`}>
-                            {Math.round(progress.percentage)}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-solarized-base1/20 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              progress.isExceeded ? 'bg-solarized-violet' :
-                              progress.isCompleted ? 'bg-solarized-green' : 
-                              'bg-solarized-blue'
-                            }`}
-                            style={{ width: `${Math.min(progress.percentage, 100)}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      {progress.isExceeded && (
-                        <p className="text-xs text-solarized-violet font-medium">
-                          🎉 Target exceeded! Great job!
-                        </p>
-                      )}
-                      {progress.isCompleted && !progress.isExceeded && (
-                        <p className="text-xs text-solarized-green font-medium">
-                          ✅ Target completed!
-                        </p>
-                      )}
                     </div>
                     
                     <div className="flex gap-2 ml-4 flex-shrink-0">
@@ -392,6 +434,105 @@ export function Targets({ targets, exercises, workouts, onAddTarget, onEditTarge
                       >
                         <Trash2 size={16} />
                       </button>
+                    </div>
+                  </div>
+
+                  {/* Progress Section */}
+                  <div className="space-y-3">
+                    {/* Progress Numbers */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-solarized-base02">{progress.currentValue}</div>
+                          <div className="text-xs text-solarized-base01">Current</div>
+                        </div>
+                        <div className="text-solarized-base01">/</div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-solarized-base02">{target.targetValue}</div>
+                          <div className="text-xs text-solarized-base01">Target</div>
+                        </div>
+                        <div className="text-center ml-4">
+                          <div className={`text-xl font-bold ${progress.statusColor}`}>
+                            {Math.round(progress.percentage)}%
+                          </div>
+                          <div className="text-xs text-solarized-base01">Complete</div>
+                        </div>
+                      </div>
+                      
+                      {/* Days Remaining */}
+                      <div className="text-right">
+                        <div className="flex items-center gap-1 text-solarized-base01">
+                          <Clock size={14} />
+                          <span className="text-sm font-medium">
+                            {progress.daysRemaining === 0 ? 'Last day!' : 
+                             progress.daysRemaining === 1 ? '1 day left' : 
+                             `${progress.daysRemaining} days left`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Visual Progress Bar */}
+                    <div className="space-y-2">
+                      <div className="w-full bg-solarized-base1/20 rounded-full h-4 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ease-out ${progress.progressBarColor} relative`}
+                          style={{ width: `${Math.min(progress.percentage, 100)}%` }}
+                        >
+                          {/* Animated shine effect for completed targets */}
+                          {progress.isCompleted && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Progress milestones */}
+                      <div className="flex justify-between text-xs text-solarized-base01">
+                        <span>0</span>
+                        <span className={progress.percentage >= 25 ? progress.statusColor : 'text-solarized-base01'}>25%</span>
+                        <span className={progress.percentage >= 50 ? progress.statusColor : 'text-solarized-base01'}>50%</span>
+                        <span className={progress.percentage >= 75 ? progress.statusColor : 'text-solarized-base01'}>75%</span>
+                        <span className={progress.percentage >= 100 ? progress.statusColor : 'text-solarized-base01'}>100%</span>
+                      </div>
+                    </div>
+
+                    {/* Status Messages */}
+                    <div className="pt-2">
+                      {progress.isExceeded && (
+                        <div className="bg-solarized-violet/10 border border-solarized-violet/20 rounded-lg p-3">
+                          <p className="text-sm text-solarized-violet font-medium flex items-center gap-2">
+                            🎉 Outstanding! You've exceeded your target by {progress.currentValue - target.targetValue} {target.type}!
+                          </p>
+                        </div>
+                      )}
+                      {progress.isCompleted && !progress.isExceeded && (
+                        <div className="bg-solarized-green/10 border border-solarized-green/20 rounded-lg p-3">
+                          <p className="text-sm text-solarized-green font-medium flex items-center gap-2">
+                            ✅ Congratulations! You've reached your target!
+                          </p>
+                        </div>
+                      )}
+                      {!progress.isCompleted && progress.status === 'on-track' && (
+                        <div className="bg-solarized-blue/10 border border-solarized-blue/20 rounded-lg p-3">
+                          <p className="text-sm text-solarized-blue font-medium flex items-center gap-2">
+                            🔵 Great progress! You're on track to reach your goal.
+                          </p>
+                        </div>
+                      )}
+                      {progress.status === 'moderate' && (
+                        <div className="bg-solarized-yellow/10 border border-solarized-yellow/20 rounded-lg p-3">
+                          <p className="text-sm text-solarized-yellow font-medium flex items-center gap-2">
+                            🟡 You're making progress! Keep up the momentum.
+                          </p>
+                        </div>
+                      )}
+                      {progress.status === 'needs-attention' && (
+                        <div className="bg-solarized-orange/10 border border-solarized-orange/20 rounded-lg p-3">
+                          <p className="text-sm text-solarized-orange font-medium flex items-center gap-2">
+                            🟠 Time to step it up! You need {target.targetValue - progress.currentValue} more {target.type} to reach your goal.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
