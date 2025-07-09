@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Target, Award } from 'lucide-react';
+import { Plus, Edit2, Trash2, Target } from 'lucide-react';
 import { WorkoutTarget, Exercise, Workout } from '../types';
 
 interface TargetsProps {
@@ -388,17 +388,7 @@ export function Targets({ targets, exercises, workouts, onAddTarget, onEditTarge
                   {/* Header with Title and Status */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-bold text-lg text-solarized-base02">{target.name}</h3>
-                        {progress.isCompleted && (
-                          <div className="flex items-center gap-1">
-                            <Award size={18} className={progress.isExceeded ? 'text-solarized-violet' : 'text-solarized-green'} />
-                            <span className={`text-sm font-medium ${progress.isExceeded ? 'text-solarized-violet' : 'text-solarized-green'}`}>
-                              {progress.isExceeded ? 'EXCEEDED!' : 'COMPLETED!'}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                      <h3 className="font-bold text-lg text-solarized-base02 mb-2">{target.name}</h3>
                       
                       {/* Info Badges */}
                       <div className="flex items-center gap-2 mb-3">
