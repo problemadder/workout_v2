@@ -438,7 +438,7 @@ export function Targets({ targets, exercises, workouts, onAddTarget, onEditTarge
                   <div className="space-y-3">
                     {/* Progress Numbers */}
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1">
                         <div className="text-center">
                           <div className="text-xl font-bold text-solarized-base02">{progress.currentValue}</div>
                         </div>
@@ -446,7 +446,7 @@ export function Targets({ targets, exercises, workouts, onAddTarget, onEditTarge
                         <div className="text-center">
                           <div className="text-xl font-bold text-solarized-base02">{target.targetValue}</div>
                         </div>
-                        <div className="text-center ml-4">
+                        <div className="text-center ml-2">
                           <div className={`text-lg font-bold ${progress.statusColor}`}>
                             {Math.round(progress.percentage)}%
                           </div>
