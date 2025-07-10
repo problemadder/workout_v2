@@ -378,7 +378,7 @@ export function TemplateManager({
                             onChange={(e) => updateTemplateExercise(index, 'exerciseId', e.target.value)}
                             className="w-full p-3 border border-solarized-base1 rounded-lg focus:ring-2 focus:ring-solarized-violet focus:border-transparent bg-solarized-base3 text-solarized-base02"
                           >
-                            {categories.map(category => {
+                            {categories.sort((a, b) => a.label.localeCompare(b.label)).map(category => {
                               const categoryExercises = sortedExercises.filter(ex => ex.category === category.value);
                               if (categoryExercises.length === 0) return null;
                               
