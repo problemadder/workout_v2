@@ -18,7 +18,7 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-solarized-base3 border-t border-solarized-base2 px-2 pt-1 pb-3 z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-transparent border-t border-solarized-base2/30 px-2 pt-1 pb-6 z-50">
       <div className="overflow-x-auto">
         <div className="flex gap-1 min-w-max px-2 h-full">
           {tabs.map(({ id, label, icon: Icon }) => (
@@ -27,8 +27,8 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
               onClick={() => onTabChange(id)}
               className={`flex flex-col items-center pt-0 pb-1 px-3 rounded-lg transition-all duration-200 ease-in-out min-w-0 flex-shrink-0 ${
                 activeTab === id
-                  ? 'text-solarized-blue bg-solarized-blue/10'
-                  : 'text-solarized-base01 hover:text-solarized-base00 hover:bg-solarized-base2'
+                  ? 'text-solarized-blue bg-solarized-blue/20'
+                  : 'text-solarized-base01 hover:text-solarized-base00 hover:bg-solarized-base2/50'
               }`}
             >
               <Icon size={18} className="mb-0.5" />
