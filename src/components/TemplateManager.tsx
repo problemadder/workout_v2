@@ -197,12 +197,6 @@ export function TemplateManager({
       let importedCount = 0;
       templateMap.forEach((templateExercises, templateName) => {
         // Check if template already exists
-        const existingTemplate = templates.find(t => t.name.toLowerCase() === templateName.toLowerCase());
-        if (existingTemplate) {
-          console.warn(`Template "${templateName}" already exists, skipping`);
-          return;
-        }
-
         onAddTemplate({
           name: templateName,
           exercises: templateExercises
@@ -210,7 +204,11 @@ export function TemplateManager({
         importedCount++;
       });
 
-      alert(`Successfully imported ${importedCount} templates`);
+      if (importedCount > 0) {
+        alert(`Successfully imported ${importedCount} templates`);
+      } else {
+        alert('No new templates were imported');
+      }
     } catch (error) {
       console.error('Import error:', error);
       alert(`Failed to import templates: ${error instanceof Error ? error.message : 'Unknown error'}`);
