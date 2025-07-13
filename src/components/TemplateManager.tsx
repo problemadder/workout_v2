@@ -131,6 +131,41 @@ export function TemplateManager({
     }
   };
 
+  // Improved CSV parsing function
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    let i = 0;
+    
+    while (i < line.length) {
+      const char = line[i];
+      
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          // Escaped quote
+          current += '"';
+          i += 2;
+        } else {
+          // Toggle quote state
+          inQuotes = !inQuotes;
+          i++;
+        }
+      } else if (char === ',' && !inQuotes) {
+        // Field separator
+        result.push(current.trim());
+        current = '';
+        i++;
+      } else {
+        current += char;
+        i++;
+      }
+    }
+    
+    result.push(current.trim());
+    return result.map(field => field.replace(/^"(.*)"$/, '$1')); // Remove surrounding quotes
+  };
+
   const handleImportTemplates = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -142,13 +177,15 @@ export function TemplateManager({
 
     try {
       const content = await file.text();
+      console.log('CSV content:', content);
       const lines = content.trim().split('\n');
       
       if (lines.length < 2) {
         throw new Error('CSV must have at least a header row and one data row');
       }
 
-      const headers = lines[0].split(',').map(h => h.replace(/"/g, '').toLowerCase().trim());
+      const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+      console.log('Headers:', headers);
       
       // Find header indices
       const nameIndex = headers.findIndex(h => h === 'name' || h.includes('name'));
@@ -169,11 +206,14 @@ export function TemplateManager({
         const line = lines[i].trim();
         if (!line) continue;
 
-        const values = line.split(',').map(v => v.replace(/"/g, '').trim());
+        const values = parseCSVLine(line);
+        console.log(`Row ${i}:`, values);
         
         const templateName = values[nameIndex];
         const exerciseName = values[exerciseNameIndex];
         const sets = parseInt(values[setsIndex]);
+
+        console.log(`Parsed: template="${templateName}", exercise="${exerciseName}", sets=${sets}`);
 
         if (!templateName || !exerciseName || isNaN(sets)) continue;
 
@@ -193,9 +233,12 @@ export function TemplateManager({
         });
       }
 
+      console.log('Template map:', templateMap);
+
       // Create templates
       let importedCount = 0;
       templateMap.forEach((templateExercises, templateName) => {
+        console.log(`Creating template: ${templateName} with ${templateExercises.length} exercises`);
         // Check if template already exists
         onAddTemplate({
           name: templateName,
