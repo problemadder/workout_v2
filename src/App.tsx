@@ -166,7 +166,7 @@ function App() {
     };
     
     console.log('Creating new template:', newTemplate);
-    setTemplates([...templates, newTemplate]);
+    setTemplates(prevTemplates => [...prevTemplates, newTemplate]);
     console.log('Template added successfully');
   };
 
