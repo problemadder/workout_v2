@@ -474,8 +474,9 @@ export function WorkoutLogger({
                     
                     <input
                       type="number"
+                      step="0.01"
                       value={set.reps || ''}
-                      onChange={(e) => updateSet(originalIndex, 'reps', parseInt(e.target.value) || 0)}
+                      onChange={(e) => updateSet(originalIndex, 'reps', parseFloat(e.target.value) || 0)}
                       placeholder={getPlaceholderText(set.exerciseId, setPosition)}
                       className="w-full p-2 border border-solarized-base1 rounded-lg focus:ring-2 focus:ring-solarized-blue focus:border-transparent text-lg font-bold bg-solarized-base3 text-solarized-base02 placeholder-gray-400 placeholder:text-xs text-center"
                       min="0"
