@@ -288,6 +288,16 @@ export function WorkoutLogger({
       )
     : filteredExercises;
 
+  // Auto-select exercise when search results in a single match
+  useEffect(() => {
+    if (searchFilteredExercises.length === 1 && searchQuery.trim()) {
+      setSelectedExerciseId(searchFilteredExercises[0].id);
+    } else if (searchFilteredExercises.length > 0 && !searchFilteredExercises.find(ex => ex.id === selectedExerciseId)) {
+      // If current selection is not in filtered results, select the first one
+      setSelectedExerciseId(searchFilteredExercises[0].id);
+    }
+  }, [searchFilteredExercises, searchQuery, selectedExerciseId]);
+
   // Group consecutive sets by exercise
   const groupedSets = () => {
     const groups: Array<{
