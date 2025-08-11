@@ -103,7 +103,7 @@ export function parseExercisesCSV(csvContent: string): ExerciseCSVRow[] {
     throw new Error(`CSV must have a "category" column. Found headers: ${headers.join(', ')}`);
   }
   
-  const validCategories: Exercise['category'][] = ['abs', 'legs', 'arms', 'back', 'shoulders', 'chest', 'cardio', 'full-body'];
+  const validCategories: Exercise['category'][] = ['abs', 'legs', 'arms', 'biceps', 'triceps', 'back', 'shoulders', 'chest', 'cardio', 'full-body'];
   
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -144,14 +144,6 @@ export function parseExercisesCSV(csvContent: string): ExerciseCSVRow[] {
       case 'triceps':
       case 'forearms':
         category = 'arms';
-        break;
-      case 'biceps':
-      case 'bicep':
-        category = 'biceps';
-        break;
-      case 'triceps':
-      case 'tricep':
-        category = 'triceps';
         break;
       case 'back':
       case 'lats':
@@ -252,7 +244,7 @@ export function parseWorkoutsCSV(csvContent: string, exercises: Exercise[]): { w
   }>();
   const exerciseMap = new Map(exercises.map(ex => [ex.name.toLowerCase(), ex]));
   const newExercises: Exercise[] = [];
-  const validCategories: Exercise['category'][] = ['abs', 'legs', 'arms', 'back', 'shoulders', 'chest', 'cardio', 'full-body'];
+  const validCategories: Exercise['category'][] = ['abs', 'legs', 'arms', 'biceps', 'triceps', 'back', 'shoulders', 'chest', 'cardio', 'full-body'];
   
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -449,7 +441,7 @@ export function parseTargetsCSV(csvContent: string, exercises: Exercise[]): Targ
   if (periodIndex === -1) throw new Error('CSV must have a "period" column');
   
   const exerciseMap = new Map(exercises.map(ex => [ex.name.toLowerCase(), ex]));
-  const validCategories: Exercise['category'][] = ['abs', 'legs', 'arms', 'back', 'shoulders', 'chest', 'cardio', 'full-body'];
+  const validCategories: Exercise['category'][] = ['abs', 'legs', 'arms', 'biceps', 'triceps', 'back', 'shoulders', 'chest', 'cardio', 'full-body'];
   const validTypes: ('sets' | 'reps')[] = ['sets', 'reps'];
   const validPeriods: ('weekly' | 'monthly' | 'yearly')[] = ['weekly', 'monthly', 'yearly'];
   
