@@ -441,15 +441,6 @@ export function ImportExport({ exercises, workouts, targets, onImportExercises, 
           </div>
         )}
       </div>
-
-      {/* Color Picker Modal */}
-      {showColorPicker && (
-        <ColorPicker
-          category={showColorPicker}
-          onSave={handleColorSave}
-          onCancel={handleColorCancel}
-        />
-      )}
     </div>
   );
 }

@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Minus, Save, RotateCcw, BookOpen, Trophy, TrendingUp, Star, X, Search } from 'lucide-react';
 import { Exercise, WorkoutSet, Workout, WorkoutTemplate } from '../types';
-import { CustomCategoryColor } from '../hooks/useLocalStorage';
 import { formatDate, isToday } from '../utils/dateUtils';
 import { getExerciseMaxReps, getExerciseAverageReps } from '../utils/maxRepUtils';
 
 interface WorkoutLoggerProps {
   exercises: Exercise[];
-  customCategoryColors: CustomCategoryColor[];
   todaysWorkout: Workout | null;
   workouts: Workout[];
   templates: WorkoutTemplate[];
@@ -15,20 +13,17 @@ interface WorkoutLoggerProps {
   onUpdateWorkout: (id: string, workout: Omit<Workout, 'id'>) => void;
   onAddTemplate?: (template: Omit<WorkoutTemplate, 'id' | 'createdAt'>) => void;
   onWorkoutDataChange?: (sets: Array<{ exerciseId: string; reps: number }>, notes: string) => void;
-  onAddCustomCategoryColor: (categoryColor: CustomCategoryColor) => void;
 }
 
 export function WorkoutLogger({ 
   exercises, 
-  customCategoryColors,
   todaysWorkout, 
   workouts,
   templates,
   onSaveWorkout, 
   onUpdateWorkout,
   onAddTemplate,
-  onWorkoutDataChange,
-  onAddCustomCategoryColor
+  onWorkoutDataChange
 }: WorkoutLoggerProps) {
   const [sets, setSets] = useState<Omit<WorkoutSet, 'id'>[]>([]);
   const [notes, setNotes] = useState('');
@@ -236,27 +231,13 @@ export function WorkoutLogger({
     if (categoryConfig) {
       return categoryConfig.color;
     }
-    
-    // Check for custom category colors
-    const customColor = customCategoryColors.find(c => c.category === category);
-    if (customColor) {
-      return `${customColor.color} ${customColor.textColor} ${customColor.borderColor}`;
-    }
-    
-    // Default color for unknown categories
+    // Default color for custom/unknown categories
     return 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   const getCategoryBackgroundStyle = (category: Exercise['category']) => {
     const categoryConfig = categories.find(c => c.value === category);
-    if (!categoryConfig) {
-      // Check for custom category colors
-      const customColor = customCategoryColors.find(c => c.category === category);
-      if (customColor) {
-        return `${customColor.color} ${customColor.borderColor}`;
-      }
-      return 'bg-solarized-base2 border-solarized-base1';
-    }
+    if (!categoryConfig) return 'bg-solarized-base2 border-solarized-base1';
     
     switch (category) {
       case 'abs':

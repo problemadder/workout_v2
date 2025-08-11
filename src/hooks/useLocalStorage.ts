@@ -1,12 +1,5 @@
 import { useState, useEffect } from 'react';
 
-export interface CustomCategoryColor {
-  category: string;
-  color: string;
-  textColor: string;
-  borderColor: string;
-}
-
 export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {

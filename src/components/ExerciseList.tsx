@@ -1,30 +1,18 @@
 import React, { useState } from 'react';
 import { Plus, Edit2, Trash2, Dumbbell, Filter } from 'lucide-react';
 import { Exercise } from '../types';
-import { CustomCategoryColor } from '../hooks/useLocalStorage';
-import { ColorPicker } from './ColorPicker';
 
 interface ExerciseListProps {
   exercises: Exercise[];
-  customCategoryColors: CustomCategoryColor[];
   onAddExercise: (exercise: Omit<Exercise, 'id' | 'createdAt'>) => void;
   onEditExercise: (id: string, exercise: Omit<Exercise, 'id' | 'createdAt'>) => void;
   onDeleteExercise: (id: string) => void;
-  onAddCustomCategoryColor: (categoryColor: CustomCategoryColor) => void;
 }
 
-export function ExerciseList({ 
-  exercises, 
-  customCategoryColors, 
-  onAddExercise, 
-  onEditExercise, 
-  onDeleteExercise, 
-  onAddCustomCategoryColor 
-}: ExerciseListProps) {
+export function ExerciseList({ exercises, onAddExercise, onEditExercise, onDeleteExercise }: ExerciseListProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Exercise['category'] | 'all'>('all');
-  const [showColorPicker, setShowColorPicker] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -103,34 +91,8 @@ export function ExerciseList({
     if (categoryConfig) {
       return categoryConfig.color;
     }
-    
-    // Check for custom category colors
-    const customColor = customCategoryColors.find(c => c.category === category);
-    if (customColor) {
-      return `${customColor.color} ${customColor.textColor} ${customColor.borderColor}`;
-    }
-    
-    // Default color for unknown categories - show color picker option
-    return 'bg-gray-100 text-gray-800 border-gray-200 cursor-pointer hover:bg-gray-200';
-  };
-
-  const handleCategoryClick = (category: Exercise['category']) => {
-    const categoryConfig = categories.find(c => c.value === category);
-    const customColor = customCategoryColors.find(c => c.category === category);
-    
-    // Only show color picker for unknown categories
-    if (!categoryConfig && !customColor) {
-      setShowColorPicker(category);
-    }
-  };
-
-  const handleColorSave = (categoryColor: CustomCategoryColor) => {
-    onAddCustomCategoryColor(categoryColor);
-    setShowColorPicker(null);
-  };
-
-  const handleColorCancel = () => {
-    setShowColorPicker(null);
+    // Default color for custom/unknown categories
+    return 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   const filteredExercises = selectedCategory === 'all' 
@@ -281,11 +243,7 @@ export function ExerciseList({
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <span 
-                    className={`inline-block px-2 py-1 rounded-full text-xs font-medium border ${getCategoryStyle(exercise.category)}`}
-                    onClick={() => handleCategoryClick(exercise.category)}
-                    title={!categories.find(c => c.value === exercise.category) && !customCategoryColors.find(c => c.category === exercise.category) ? 'Click to set color' : ''}
-                  >
+                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium border ${getCategoryStyle(exercise.category)}`}>
                     {categories.find(c => c.value === exercise.category)?.label}
                   </span>
                   <div className="flex gap-2">
@@ -312,15 +270,6 @@ export function ExerciseList({
           ))
         )}
       </div>
-
-      {/* Color Picker Modal */}
-      {showColorPicker && (
-        <ColorPicker
-          category={showColorPicker}
-          onSave={handleColorSave}
-          onCancel={handleColorCancel}
-        />
-      )}
     </div>
   );
 }
