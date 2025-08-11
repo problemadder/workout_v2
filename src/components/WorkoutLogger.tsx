@@ -233,21 +233,21 @@ export function WorkoutLogger({
     
     switch (category) {
       case 'abs':
-        return 'bg-yellow-100 border-yellow-200';
+        return 'bg-[#FFE6A9] border-[#FFE6A9]';
       case 'legs':
-        return 'bg-green-100 border-green-200';
+        return 'bg-[#A7C1A8] border-[#A7C1A8]';
       case 'arms':
-        return 'bg-blue-100 border-blue-200';
+        return 'bg-[#9EC6F3] border-[#9EC6F3]';
       case 'back':
-        return 'bg-purple-100 border-purple-200';
+        return 'bg-[#898AC4] border-[#898AC4]';
       case 'shoulders':
-        return 'bg-gray-300 border-gray-400';
+        return 'bg-[#E5E0D8] border-[#E5E0D8]';
       case 'chest':
-        return 'bg-[#6F826A] border-[#6F826A]';
+        return 'bg-[#D1D8BE] border-[#D1D8BE]';
       case 'cardio':
-        return 'bg-[#F6F0F0] border-[#F6F0F0]';
+        return 'bg-[#819A91] border-[#819A91]';
       case 'full-body':
-        return 'bg-[#5C7285] border-[#5C7285]';
+        return 'bg-[#E5989B] border-[#E5989B]';
       default:
         return 'bg-solarized-base2 border-solarized-base1';
     }
