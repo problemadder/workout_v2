@@ -37,17 +37,17 @@ export function WorkoutLogger({
   const [searchQuery, setSearchQuery] = useState('');
 
   const categories = [
-    { value: 'abs', label: 'Abs', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-    { value: 'arms', label: 'Arms', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+    { value: 'abs', label: 'Abs', color: 'bg-[#FFF9BD] text-gray-800 border-[#FFF9BD]' },
+    { value: 'arms', label: 'Arms', color: 'bg-[#687FE5] text-white border-[#687FE5]' },
     { value: 'biceps', label: 'Biceps', color: 'bg-[#9FB3DF] text-white border-[#9FB3DF]' },
-    { value: 'triceps', label: 'Triceps', color: 'bg-[#ADB2D4] text-white border-[#ADB2D4]' },
+    { value: 'triceps', label: 'Triceps', color: 'bg-[#9EC6F3] text-white border-[#9EC6F3]' },
     { value: 'back', label: 'Back', color: 'bg-purple-100 text-purple-800 border-purple-200' },
     { value: 'back', label: 'Back', color: 'bg-[#898AC4] text-white border-[#898AC4]' },
-    { value: 'chest', label: 'Chest', color: 'bg-[#FFE6A9] text-gray-800 border-[#FFE6A9]' },
+    { value: 'shoulders', label: 'Shoulders', color: 'bg-[#E5E0D8] text-gray-700 border-[#E5E0D8]' },
     { value: 'cardio', label: 'Cardio', color: 'bg-[#819A91] text-white border-[#819A91]' },
     { value: 'full-body', label: 'Full Body', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
     { value: 'legs', label: 'Legs', color: 'bg-[#A7C1A8] text-white border-[#A7C1A8]' },
-    { value: 'shoulders', label: 'Shoulders', color: 'bg-gray-300 text-gray-700 border-gray-400' }
+    { value: 'full-body', label: 'Full Body', color: 'bg-[#E5989B] text-white border-[#E5989B]' }
   ];
 
   // Sort exercises alphabetically
@@ -241,33 +241,25 @@ export function WorkoutLogger({
     
     switch (category) {
       case 'abs':
-        return 'bg-yellow-100 border-yellow-200';
+        return 'bg-[#FFF9BD] border-[#FFF9BD]';
       case 'legs':
         return 'bg-[#A7C1A8] border-[#A7C1A8]';
       case 'arms':
-        return 'bg-blue-100 border-blue-200';
+        return 'bg-[#687FE5] border-[#687FE5]';
       case 'biceps':
         return 'bg-[#9FB3DF] border-[#9FB3DF]';
       case 'triceps':
-        return 'bg-[#ADB2D4] border-[#ADB2D4]';
+        return 'bg-[#9EC6F3] border-[#9EC6F3]';
       case 'back':
         return 'bg-[#898AC4] border-[#898AC4]';
       case 'shoulders':
-        return 'bg-gray-300 border-gray-400';
+        return 'bg-[#E5E0D8] border-[#E5E0D8]';
       case 'chest':
-      case 'biceps':
-      case 'bicep':
-        category = 'biceps';
-        break;
-      case 'triceps':
-      case 'tricep':
-        category = 'triceps';
-        break;
         return 'bg-[#FFE6A9] border-[#FFE6A9]';
       case 'cardio':
         return 'bg-[#819A91] border-[#819A91]';
       case 'full-body':
-        return 'bg-[#5C7285] border-[#5C7285]';
+        return 'bg-[#E5989B] border-[#E5989B]';
       default:
         return 'bg-gray-100 border-gray-200';
     }

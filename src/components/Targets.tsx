@@ -25,17 +25,16 @@ export function Targets({ targets, exercises, workouts, onAddTarget, onEditTarge
   });
 
   const categories = [
-    { value: 'abs', label: 'Abs', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-    { value: 'arms', label: 'Arms', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+    { value: 'abs', label: 'Abs', color: 'bg-[#FFF9BD] text-gray-800 border-[#FFF9BD]' },
+    { value: 'arms', label: 'Arms', color: 'bg-[#687FE5] text-white border-[#687FE5]' },
     { value: 'biceps', label: 'Biceps', color: 'bg-[#9FB3DF] text-white border-[#9FB3DF]' },
-    { value: 'triceps', label: 'Triceps', color: 'bg-[#ADB2D4] text-white border-[#ADB2D4]' },
+    { value: 'triceps', label: 'Triceps', color: 'bg-[#9EC6F3] text-white border-[#9EC6F3]' },
     { value: 'back', label: 'Back', color: 'bg-[#898AC4] text-white border-[#898AC4]' },
     { value: 'cardio', label: 'Cardio', color: 'bg-[#819A91] text-white border-[#819A91]' },
-    { value: 'cardio', label: 'Cardio', color: 'bg-[#819A91] text-white border-[#819A91]' },
     { value: 'chest', label: 'Chest', color: 'bg-[#FFE6A9] text-gray-800 border-[#FFE6A9]' },
-    { value: 'full-body', label: 'Full Body', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
+    { value: 'full-body', label: 'Full Body', color: 'bg-[#E5989B] text-white border-[#E5989B]' },
     { value: 'legs', label: 'Legs', color: 'bg-[#A7C1A8] text-white border-[#A7C1A8]' },
-    { value: 'shoulders', label: 'Shoulders', color: 'bg-gray-300 text-gray-700 border-gray-400' }
+    { value: 'shoulders', label: 'Shoulders', color: 'bg-[#E5E0D8] text-gray-700 border-[#E5E0D8]' }
   ].sort((a, b) => a.label.localeCompare(b.label));
 
   const sortedExercises = [...exercises].sort((a, b) => a.name.localeCompare(b.name));
