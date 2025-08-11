@@ -511,14 +511,14 @@ export function Stats({ workouts, exercises, stats }: StatsProps) {
   const maxChartExercise = exercises.find(e => e.id === maxChartExerciseId);
 
   const categories = [
-    { value: 'abs', label: 'Abs', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-    { value: 'legs', label: 'Legs', color: 'bg-green-100 text-green-800 border-green-200' },
-    { value: 'arms', label: 'Arms', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-    { value: 'back', label: 'Back', color: 'bg-purple-100 text-purple-800 border-purple-200' },
-    { value: 'shoulders', label: 'Shoulders', color: 'bg-gray-300 text-gray-700 border-gray-400' },
-    { value: 'chest', label: 'Chest', color: 'bg-pink-100 text-pink-800 border-pink-200' },
-    { value: 'cardio', label: 'Cardio', color: 'bg-red-100 text-red-800 border-red-200' },
-    { value: 'full-body', label: 'Full Body', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' }
+    { value: 'abs', label: 'Abs', color: 'text-yellow-800 border-yellow-300', bgColor: '#FFE6A9' },
+    { value: 'legs', label: 'Legs', color: 'text-green-800 border-green-300', bgColor: '#A7C1A8' },
+    { value: 'arms', label: 'Arms', color: 'text-blue-800 border-blue-300', bgColor: '#9EC6F3' },
+    { value: 'back', label: 'Back', color: 'text-purple-800 border-purple-300', bgColor: '#898AC4' },
+    { value: 'shoulders', label: 'Shoulders', color: 'text-gray-700 border-gray-400', bgColor: '#E5E0D8' },
+    { value: 'chest', label: 'Chest', color: 'text-green-800 border-green-300', bgColor: '#D1D8BE' },
+    { value: 'cardio', label: 'Cardio', color: 'text-teal-800 border-teal-300', bgColor: '#819A91' },
+    { value: 'full-body', label: 'Full Body', color: 'text-rose-800 border-rose-300', bgColor: '#E5989B' }
   ];
 
   // Get month names for display
