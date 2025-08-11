@@ -12,6 +12,7 @@ interface StatsProps {
   stats: WorkoutStats;
 }
 
+export function Stats({ workouts, exercises, stats }: StatsProps) {
 export function Stats({ workouts, exercises, customCategoryColors, stats }: StatsProps) {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>('');
@@ -487,22 +488,6 @@ export function Stats({ workouts, exercises, customCategoryColors, stats }: Stat
     return chartData;
   };
 
-  const getCategoryStyle = (category: Exercise['category']) => {
-    const categoryConfig = categories.find(c => c.value === category);
-    if (categoryConfig) {
-      return categoryConfig.color;
-    }
-    
-    // Check for custom category colors
-    const customColor = customCategoryColors.find(c => c.category === category);
-    if (customColor) {
-      return `${customColor.color} ${customColor.textColor} ${customColor.borderColor}`;
-    }
-    
-    // Default color for unknown categories
-    return 'bg-gray-100 text-gray-800 border-gray-200';
-  };
-
   const exerciseStats = getExerciseStats(selectedYear);
   const availableYears = getAvailableYears();
   const weeklyData = getWeeklyData();
@@ -590,7 +575,12 @@ export function Stats({ workouts, exercises, customCategoryColors, stats }: Stat
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-solarized-base02">
           <Calendar size={20} className="text-solarized-blue" />
           Last 7 Days
-        </h3>
+        </h3
+    )
+    )
+    }
+  )
+}>
         <div className="space-y-3">
           {weeklyData.map((day, index) => (
             <div key={index} className="flex items-center gap-3">
@@ -661,7 +651,9 @@ export function Stats({ workouts, exercises, customCategoryColors, stats }: Stat
           <div className="space-y-4">
             <div className="text-center mb-4">
               <h4 className="text-lg font-semibold text-solarized-base02">{selectedExercise.name}</h4>
-              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getCategoryStyle(selectedExercise.category)}`}>
+              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${
+                categories.find(c => c.value === selectedExercise.category)?.color || 'bg-gray-100 text-gray-800 border-gray-200'
+              }`}>
                 {categories.find(c => c.value === selectedExercise.category)?.label}
               </span>
             </div>
@@ -828,7 +820,9 @@ export function Stats({ workouts, exercises, customCategoryColors, stats }: Stat
           <div className="space-y-4">
             <div className="text-center">
               <h4 className="text-lg font-semibold text-solarized-base02">{maxChartExercise.name}</h4>
-              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getCategoryStyle(maxChartExercise.category)}`}>
+              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${
+                categories.find(c => c.value === maxChartExercise.category)?.color || 'bg-gray-100 text-gray-800 border-gray-200'
+              }`}>
                 {categories.find(c => c.value === maxChartExercise.category)?.label}
               </span>
               <p className="text-sm text-solarized-base01 mt-2">
