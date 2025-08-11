@@ -145,6 +145,14 @@ export function parseExercisesCSV(csvContent: string): ExerciseCSVRow[] {
       case 'forearms':
         category = 'arms';
         break;
+      case 'biceps':
+      case 'bicep':
+        category = 'biceps';
+        break;
+      case 'triceps':
+      case 'tricep':
+        category = 'triceps';
+        break;
       case 'back':
       case 'lats':
       case 'latissimus':
