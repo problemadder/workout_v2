@@ -2,7 +2,7 @@ export interface Exercise {
   id: string;
   name: string;
   description?: string;
-  category: 'abs' | 'legs' | 'arms' | 'back' | 'shoulders' | 'chest' | 'cardio' | 'full-body';
+  category: 'abs' | 'legs' | 'arms' | 'biceps' | 'triceps' | 'back' | 'shoulders' | 'chest' | 'cardio' | 'full-body';
   createdAt: Date;
 }
 

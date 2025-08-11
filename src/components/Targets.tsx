@@ -27,7 +27,10 @@ export function Targets({ targets, exercises, workouts, onAddTarget, onEditTarge
   const categories = [
     { value: 'abs', label: 'Abs', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
     { value: 'arms', label: 'Arms', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+    { value: 'biceps', label: 'Biceps', color: 'bg-[#9FB3DF] text-white border-[#9FB3DF]' },
+    { value: 'triceps', label: 'Triceps', color: 'bg-[#ADB2D4] text-white border-[#ADB2D4]' },
     { value: 'back', label: 'Back', color: 'bg-[#898AC4] text-white border-[#898AC4]' },
+    { value: 'cardio', label: 'Cardio', color: 'bg-[#819A91] text-white border-[#819A91]' },
     { value: 'cardio', label: 'Cardio', color: 'bg-[#819A91] text-white border-[#819A91]' },
     { value: 'chest', label: 'Chest', color: 'bg-[#FFE6A9] text-gray-800 border-[#FFE6A9]' },
     { value: 'full-body', label: 'Full Body', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
