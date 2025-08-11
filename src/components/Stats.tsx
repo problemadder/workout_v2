@@ -516,8 +516,8 @@ export function Stats({ workouts, exercises, stats }: StatsProps) {
     { value: 'arms', label: 'Arms', color: 'bg-blue-100 text-blue-800 border-blue-200' },
     { value: 'back', label: 'Back', color: 'bg-purple-100 text-purple-800 border-purple-200' },
     { value: 'shoulders', label: 'Shoulders', color: 'bg-gray-300 text-gray-700 border-gray-400' },
-    { value: 'chest', label: 'Chest', color: 'bg-[#FFE6A9] text-gray-800 border-[#FFE6A9]' },
-    { value: 'cardio', label: 'Cardio', color: 'bg-[#819A91] text-white border-[#819A91]' },
+    { value: 'chest', label: 'Chest', color: 'bg-pink-100 text-pink-800 border-pink-200' },
+    { value: 'cardio', label: 'Cardio', color: 'bg-red-100 text-red-800 border-red-200' },
     { value: 'full-body', label: 'Full Body', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' }
   ];
 

@@ -40,8 +40,8 @@ export function WorkoutLogger({
     { value: 'abs', label: 'Abs', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
     { value: 'arms', label: 'Arms', color: 'bg-blue-100 text-blue-800 border-blue-200' },
     { value: 'back', label: 'Back', color: 'bg-purple-100 text-purple-800 border-purple-200' },
-    { value: 'cardio', label: 'Cardio', color: 'bg-[#819A91] text-white border-[#819A91]' },
-    { value: 'chest', label: 'Chest', color: 'bg-[#FFE6A9] text-gray-800 border-[#FFE6A9]' },
+    { value: 'cardio', label: 'Cardio', color: 'bg-red-100 text-red-800 border-red-200' },
+    { value: 'chest', label: 'Chest', color: 'bg-pink-100 text-pink-800 border-pink-200' },
     { value: 'full-body', label: 'Full Body', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
     { value: 'legs', label: 'Legs', color: 'bg-green-100 text-green-800 border-green-200' },
     { value: 'shoulders', label: 'Shoulders', color: 'bg-gray-300 text-gray-700 border-gray-400' }
@@ -224,12 +224,7 @@ export function WorkoutLogger({
   };
 
   const getCategoryStyle = (category: Exercise['category']) => {
-    const categoryConfig = categories.find(c => c.value === category);
-    if (categoryConfig) {
-      return categoryConfig.color;
-    }
-    // Default color for custom/unknown categories
-    return 'bg-gray-100 text-gray-800 border-gray-200';
+    return categories.find(c => c.value === category)?.color || 'bg-solarized-base1/10 text-solarized-base01 border-solarized-base1/20';
   };
 
   const getCategoryBackgroundStyle = (category: Exercise['category']) => {
@@ -248,13 +243,13 @@ export function WorkoutLogger({
       case 'shoulders':
         return 'bg-gray-300 border-gray-400';
       case 'chest':
-        return 'bg-[#FFE6A9] border-[#FFE6A9]';
+        return 'bg-[#6F826A] border-[#6F826A]';
       case 'cardio':
-        return 'bg-[#819A91] border-[#819A91]';
+        return 'bg-[#F6F0F0] border-[#F6F0F0]';
       case 'full-body':
         return 'bg-[#5C7285] border-[#5C7285]';
       default:
-        return 'bg-gray-100 border-gray-200';
+        return 'bg-solarized-base2 border-solarized-base1';
     }
   };
 
