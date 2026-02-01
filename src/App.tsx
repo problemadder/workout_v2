@@ -22,6 +22,7 @@ function App() {
     sets: Array<{ exerciseId: string; reps: number }>;
     notes: string;
   } | null>(null);
+  const [pendingTemplate, setPendingTemplate] = useState<WorkoutTemplate | null>(null);
 
   // Initialize default exercises if none exist
   useEffect(() => {
@@ -191,6 +192,7 @@ function App() {
   };
 
   const handleUseTemplate = (template: WorkoutTemplate) => {
+    setPendingTemplate(template);
     setActiveTab('workout');
   };
 
@@ -338,10 +340,12 @@ function App() {
             todaysWorkout={todaysWorkout || null}
             workouts={workouts}
             templates={templates}
+            pendingTemplate={pendingTemplate}
             onSaveWorkout={handleSaveWorkout}
             onUpdateWorkout={handleUpdateWorkout}
             onAddTemplate={handleAddTemplate}
             onWorkoutDataChange={handleWorkoutDataChange}
+            onTemplateClear={() => setPendingTemplate(null)}
           />
         )}
         

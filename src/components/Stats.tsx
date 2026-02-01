@@ -3,6 +3,7 @@ import { TrendingUp, Target, Calendar, Percent, Dumbbell, BarChart3, Activity, L
 import { Workout, WorkoutStats, Exercise } from '../types';
 import { formatShortDate, getDaysAgo } from '../utils/dateUtils';
 import { getExerciseMaxReps } from '../utils/maxRepUtils';
+import { formatSingleDecimal } from '../utils/formatUtils';
 
 interface StatsProps {
   workouts: Workout[];
@@ -83,8 +84,8 @@ export function Stats({ workouts, exercises, stats }: StatsProps) {
     ).size;
     
     // Calculate daily averages
-    const currentYearDailyAvg = currentYearWorkoutDays > 0 ? Math.round((currentYearReps / currentYearWorkoutDays) * 10) / 10 : 0;
-    const lastYearDailyAvg = lastYearWorkoutDays > 0 ? Math.round((lastYearReps / lastYearWorkoutDays) * 10) / 10 : 0;
+    const currentYearDailyAvg = currentYearWorkoutDays > 0 ? formatSingleDecimal(currentYearReps / currentYearWorkoutDays) : 0;
+    const lastYearDailyAvg = lastYearWorkoutDays > 0 ? formatSingleDecimal(lastYearReps / lastYearWorkoutDays) : 0;
     
     // Calculate total days in each year (up to today for current year)
     const today = new Date();
@@ -94,8 +95,8 @@ export function Stats({ workouts, exercises, stats }: StatsProps) {
     const lastYearTotalDays = 365; // Assume non-leap year for simplicity
     
     // Calculate reps per day per year (including rest days)
-    const currentYearRepsPerDay = Math.round((currentYearReps / currentYearTotalDays) * 100) / 100;
-    const lastYearRepsPerDay = Math.round((lastYearReps / lastYearTotalDays) * 100) / 100;
+    const currentYearRepsPerDay = formatSingleDecimal(currentYearReps / currentYearTotalDays);
+    const lastYearRepsPerDay = formatSingleDecimal(lastYearReps / lastYearTotalDays);
     
     return {
       currentYear: {
@@ -719,7 +720,7 @@ export function Stats({ workouts, exercises, stats }: StatsProps) {
                       : 'text-solarized-red'
                   }`}>
                     {exerciseComparison.currentYear.repsPerDay >= exerciseComparison.lastYear.repsPerDay ? '+' : ''}
-                    {(exerciseComparison.currentYear.repsPerDay - exerciseComparison.lastYear.repsPerDay).toFixed(2)}
+                    {formatSingleDecimal(exerciseComparison.currentYear.repsPerDay - exerciseComparison.lastYear.repsPerDay)}
                   </span>
                 </div>
               </div>

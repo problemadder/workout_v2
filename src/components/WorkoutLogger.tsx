@@ -9,10 +9,12 @@ interface WorkoutLoggerProps {
   todaysWorkout: Workout | null;
   workouts: Workout[];
   templates: WorkoutTemplate[];
+  pendingTemplate?: WorkoutTemplate | null;
   onSaveWorkout: (workout: Omit<Workout, 'id'>) => void;
   onUpdateWorkout: (id: string, workout: Omit<Workout, 'id'>) => void;
   onAddTemplate?: (template: Omit<WorkoutTemplate, 'id' | 'createdAt'>) => void;
   onWorkoutDataChange?: (sets: Array<{ exerciseId: string; reps: number }>, notes: string) => void;
+  onTemplateClear?: () => void;
 }
 
 export function WorkoutLogger({ 
@@ -20,10 +22,12 @@ export function WorkoutLogger({
   todaysWorkout, 
   workouts,
   templates,
+  pendingTemplate,
   onSaveWorkout, 
   onUpdateWorkout,
   onAddTemplate,
-  onWorkoutDataChange
+  onWorkoutDataChange,
+  onTemplateClear
 }: WorkoutLoggerProps) {
   const [sets, setSets] = useState<Omit<WorkoutSet, 'id'>[]>([]);
   const [notes, setNotes] = useState('');
@@ -50,15 +54,39 @@ export function WorkoutLogger({
   // Sort exercises alphabetically
   const sortedExercises = [...exercises].sort((a, b) => a.name.localeCompare(b.name));
 
+  // Load template when pendingTemplate is set (takes priority)
   useEffect(() => {
-    if (todaysWorkout) {
+    if (pendingTemplate) {
+      const templateSets: Omit<WorkoutSet, 'id'>[] = [];
+      pendingTemplate.exercises.forEach(templateExercise => {
+        for (let i = 0; i < templateExercise.sets; i++) {
+          templateSets.push({
+            exerciseId: templateExercise.exerciseId,
+            reps: 0 // Start with 0 reps to show placeholder
+          });
+        }
+      });
+      
+      setSets(templateSets);
+      setNotes(`From template: ${pendingTemplate.name}`);
+      
+      // Clear the pending template after loading
+      if (onTemplateClear) {
+        onTemplateClear();
+      }
+    }
+  }, [pendingTemplate, onTemplateClear]);
+
+  useEffect(() => {
+    // Only load today's workout if there's no pending template
+    if (todaysWorkout && !pendingTemplate) {
       setSets(todaysWorkout.sets.map(set => ({
         exerciseId: set.exerciseId,
         reps: set.reps
       })));
       setNotes(todaysWorkout.notes || '');
     }
-  }, [todaysWorkout]);
+  }, [todaysWorkout, pendingTemplate]);
 
   useEffect(() => {
     if (sortedExercises.length > 0 && !selectedExerciseId) {
