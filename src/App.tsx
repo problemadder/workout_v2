@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Navigation } from './components/Navigation';
 import { Dashboard } from './components/Dashboard';
 import { ExerciseList } from './components/ExerciseList';
@@ -10,7 +10,8 @@ import { Targets } from './components/Targets';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { Exercise, Workout, WorkoutStats, WorkoutTemplate, WorkoutTarget } from './types';
 import { defaultExercises } from './data/defaultExercises';
-import { isToday, getDaysAgo } from './utils/dateUtils';
+import { isToday } from './utils/dateUtils';
+import { saveDraftWorkout, loadDraftWorkout, clearDraftWorkout } from './utils/draftWorkoutUtils';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -23,6 +24,7 @@ function App() {
     notes: string;
   } | null>(null);
   const [pendingTemplate, setPendingTemplate] = useState<WorkoutTemplate | null>(null);
+  const draftSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize default exercises if none exist
   useEffect(() => {
@@ -35,6 +37,29 @@ function App() {
       setExercises(initialExercises);
     }
   }, [exercises.length, setExercises]);
+
+  // Restore draft workout on app load
+  useEffect(() => {
+    const draft = loadDraftWorkout();
+    if (draft) {
+      setPendingWorkout({
+        sets: draft.sets.map((set) => {
+          const { id, ...rest } = set;
+          return rest;
+        }),
+        notes: draft.notes
+      });
+    }
+  }, []);
+
+  // Cleanup draft save timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (draftSaveTimeoutRef.current) {
+        clearTimeout(draftSaveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Calculate stats
   const calculateStats = (): WorkoutStats => {
@@ -224,15 +249,17 @@ function App() {
     };
     setWorkouts([...workouts, newWorkout]);
     setActiveTab('dashboard');
+    clearDraftWorkout();
   };
 
   const handleUpdateWorkout = (id: string, workoutData: Omit<Workout, 'id'>) => {
-    setWorkouts(workouts.map(workout => 
-      workout.id === id 
+    setWorkouts(workouts.map(workout =>
+      workout.id === id
         ? { ...workout, ...workoutData }
         : workout
     ));
     setActiveTab('dashboard');
+    clearDraftWorkout();
   };
 
   const handleStartWorkout = () => {
@@ -258,17 +285,30 @@ function App() {
         } else {
           handleSaveWorkout(workout);
         }
-        
+
         // Clear pending workout after saving
         setPendingWorkout(null);
+        // Draft will be cleared by handleSaveWorkout/handleUpdateWorkout
+      } else {
+        // Clear draft if switching away with empty workout
+        clearDraftWorkout();
       }
     }
-    
+
     setActiveTab(newTab);
   };
 
   const handleWorkoutDataChange = (sets: Array<{ exerciseId: string; reps: number }>, notes: string) => {
     setPendingWorkout({ sets, notes });
+
+    // Debounced auto-save to localStorage
+    if (draftSaveTimeoutRef.current) {
+      clearTimeout(draftSaveTimeoutRef.current);
+    }
+
+    draftSaveTimeoutRef.current = setTimeout(() => {
+      saveDraftWorkout(sets, notes);
+    }, 400); // 400ms debounce
   };
 
   const handleImportExercises = (newExercises: Exercise[]) => {
