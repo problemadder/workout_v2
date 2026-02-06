@@ -10,7 +10,7 @@ import { Targets } from './components/Targets';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { Exercise, Workout, WorkoutStats, WorkoutTemplate, WorkoutTarget } from './types';
 import { defaultExercises } from './data/defaultExercises';
-import { isToday } from './utils/dateUtils';
+import { isToday, formatDate } from './utils/dateUtils';
 import { saveDraftWorkout, loadDraftWorkout, clearDraftWorkout } from './utils/draftWorkoutUtils';
 
 function App() {
@@ -221,6 +221,32 @@ function App() {
     setActiveTab('workout');
   };
 
+  const handleUseWorkout = (workout: Workout) => {
+    // Group sets by exerciseId and count sets per exercise
+    const exerciseGroups = workout.sets.reduce((groups, set) => {
+      const exerciseId = set.exerciseId;
+      if (!groups[exerciseId]) {
+        groups[exerciseId] = 0;
+      }
+      groups[exerciseId]++;
+      return groups;
+    }, {} as Record<string, number>);
+
+    // Create a temporary WorkoutTemplate object
+    const tempTemplate: WorkoutTemplate = {
+      id: crypto.randomUUID(),
+      name: `Recurring from ${formatDate(new Date(workout.date))}`,
+      exercises: Object.entries(exerciseGroups).map(([exerciseId, setCount]) => ({
+        exerciseId,
+        sets: setCount
+      })),
+      createdAt: new Date()
+    };
+
+    setPendingTemplate(tempTemplate);
+    setActiveTab('workout');
+  };
+
   const handleAddTarget = (targetData: Omit<WorkoutTarget, 'id' | 'createdAt'>) => {
     const newTarget: WorkoutTarget = {
       ...targetData,
@@ -351,6 +377,8 @@ function App() {
             workouts={sortedWorkouts}
             stats={stats}
             onStartWorkout={handleStartWorkout}
+            onUseWorkout={handleUseWorkout}
+            exercises={exercises}
           />
         )}
         

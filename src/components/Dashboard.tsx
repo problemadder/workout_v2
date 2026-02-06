@@ -1,15 +1,17 @@
 import React from 'react';
-import { Calendar, Target, TrendingUp, Percent } from 'lucide-react';
-import { Workout, WorkoutStats } from '../types';
+import { Calendar, Target, TrendingUp, Percent, Play } from 'lucide-react';
+import { Workout, WorkoutStats, Exercise } from '../types';
 import { formatDate, isToday, getDaysAgo } from '../utils/dateUtils';
 
 interface DashboardProps {
   workouts: Workout[];
   stats: WorkoutStats;
   onStartWorkout: () => void;
+  onUseWorkout: (workout: Workout) => void;
+  exercises: Exercise[];
 }
 
-export function Dashboard({ workouts, stats, onStartWorkout }: DashboardProps) {
+export function Dashboard({ workouts, stats, onStartWorkout, onUseWorkout, exercises }: DashboardProps) {
   const todaysWorkout = workouts.find(w => isToday(new Date(w.date)));
   const lastWorkout = workouts[0];
   const lastWorkoutDays = lastWorkout ? getDaysAgo(new Date(lastWorkout.date)) : null;
@@ -160,44 +162,85 @@ export function Dashboard({ workouts, stats, onStartWorkout }: DashboardProps) {
         )}
       </div>
 
-      {/* Recent Activity */}
+      {/* Recent Workouts */}
       <div className="bg-solarized-base2 rounded-xl p-6 shadow-lg border border-solarized-base1">
         <div className="flex items-center gap-3 mb-4">
           <TrendingUp size={20} className="text-solarized-blue" />
-          <h2 className="text-lg font-semibold text-solarized-base02">Recent Activity</h2>
+          <h2 className="text-lg font-semibold text-solarized-base02">Recent Workouts</h2>
         </div>
         
-        {workouts.length > 0 ? (
-          <div className="space-y-3">
-            {workouts.slice(0, 5).map((workout) => (
-              <div key={workout.id} className="flex items-center justify-between py-2">
-                <div>
-                  <p className="font-medium text-solarized-base02">
-                    {formatDate(new Date(workout.date))}
-                  </p>
-                  <p className="text-sm text-solarized-base01">
-                    {workout.sets.length} sets completed
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-solarized-blue">
-                    {Math.round(workout.sets.reduce((total, set) => total + set.reps, 0))} reps
-                  </p>
-                </div>
+        {/* Filter workouts from last 60 days */}
+        {(() => {
+          const sixtyDaysAgo = new Date();
+          sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+          const recentWorkouts = workouts.filter(workout => 
+            new Date(workout.date) >= sixtyDaysAgo
+          );
+
+          if (recentWorkouts.length > 0) {
+            return (
+              <div className="space-y-3">
+                {recentWorkouts.map((workout) => {
+                  // Group exercises by exerciseId and count sets
+                  const exerciseGroups = workout.sets.reduce((groups, set) => {
+                    const exerciseId = set.exerciseId;
+                    if (!groups[exerciseId]) {
+                      groups[exerciseId] = { count: 0, exerciseId };
+                    }
+                    groups[exerciseId].count++;
+                    return groups;
+                  }, {} as Record<string, { count: number; exerciseId: string }>);
+
+                  const groupedExercises = Object.values(exerciseGroups);
+
+                  return (
+                    <div key={workout.id} className="bg-solarized-base1/10 rounded-lg p-4 border border-solarized-base1/20">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-solarized-base02">
+                            {formatDate(new Date(workout.date))}
+                          </p>
+                          <p className="text-sm text-solarized-base01">
+                            {workout.sets.length} sets completed
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => onUseWorkout(workout)}
+                          className="p-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition-colors shadow-md"
+                          title="Recreate this workout"
+                        >
+                          <Play size={16} />
+                        </button>
+                      </div>
+                      <div className="space-y-1">
+                        {groupedExercises.map((group, index) => {
+                          const exerciseName = exercises.find(ex => ex.id === group.exerciseId)?.name || 'Unknown Exercise';
+                          return (
+                            <div key={index} className="text-sm text-solarized-base01">
+                              {exerciseName} - {group.count} {group.count === 1 ? 'set' : 'sets'}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-solarized-base01 mb-4">No workouts yet</p>
-            <button
-              onClick={onStartWorkout}
-              className="bg-solarized-blue text-solarized-base3 py-2 px-4 rounded-lg font-medium hover:bg-solarized-blue/90 transition-colors shadow-md"
-            >
-              Start Your First Workout
-            </button>
-          </div>
-        )}
+            );
+          } else {
+            return (
+              <div className="text-center py-8">
+                <p className="text-solarized-base01 mb-4">No workouts in the last 60 days</p>
+                <button
+                  onClick={onStartWorkout}
+                  className="bg-solarized-blue text-solarized-base3 py-2 px-4 rounded-lg font-medium hover:bg-solarized-blue/90 transition-colors shadow-md"
+                >
+                  Start Your First Workout
+                </button>
+              </div>
+            );
+          }
+        })()}
       </div>
 
       {/* Last Workout Info */}
