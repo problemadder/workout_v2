@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, Target, Calendar, Percent, Dumbbell, BarChart3, Activity, LineChart, Search, X, Clock, Repeat, TimerClock } from 'lucide-react';
-import { Workout, WorkoutStats, Exercise } from '../types';
-import { formatShortDate, getDaysAgo } from '../utils/dateUtils';
+import { TrendingUp, Target, Calendar, Percent, Dumbbell, BarChart3, Activity, LineChart, Search, X, Clock, Repeat, Timer } from 'lucide-react';
+import { Workout, Exercise } from '../types';
+import { formatShortDate } from '../utils/dateUtils';
 import { formatSingleDecimal } from '../utils/formatUtils';
 
 interface StatsProps {
   workouts: Workout[];
   exercises: Exercise[];
-  stats: WorkoutStats;
 }
 
-export function Stats({ workouts, exercises, stats }: StatsProps) {
+export function Stats({ workouts, exercises }: StatsProps) {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1178,7 +1177,7 @@ export function Stats({ workouts, exercises, stats }: StatsProps) {
       {/* Rest Days Between Sessions Chart */}
       <div className="bg-solarized-base2 rounded-xl p-6 shadow-lg border border-solarized-base1">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-solarized-base02">
-          <TimerClock size={20} className="text-solarized-orange" />
+          <Timer size={20} className="text-solarized-orange" />
           Rest Days Between Sessions (Last 4 Months)
         </h3>
         {selectedExerciseId && restDaysBetweenSessions.length > 0 ? (

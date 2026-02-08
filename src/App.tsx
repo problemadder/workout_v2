@@ -421,7 +421,6 @@ function App() {
           <Stats
             workouts={sortedWorkouts}
             exercises={exercises}
-            stats={stats}
           />
         )}
 
