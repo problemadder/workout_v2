@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { TrendingUp, Target, Calendar, Percent, Dumbbell, BarChart3, Activity, LineChart } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { TrendingUp, Target, Calendar, Percent, Dumbbell, BarChart3, Activity, LineChart, Search, X } from 'lucide-react';
 import { Workout, WorkoutStats, Exercise } from '../types';
 import { formatShortDate, getDaysAgo } from '../utils/dateUtils';
-import { getExerciseMaxReps } from '../utils/maxRepUtils';
 import { formatSingleDecimal } from '../utils/formatUtils';
 
 interface StatsProps {
@@ -14,7 +13,7 @@ interface StatsProps {
 export function Stats({ workouts, exercises, stats }: StatsProps) {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>('');
-  const [maxChartExerciseId, setMaxChartExerciseId] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const getExerciseStats = (year?: number) => {
     const filteredWorkouts = year 
@@ -500,17 +499,6 @@ export function Stats({ workouts, exercises, stats }: StatsProps) {
   const lastYearMonthlyData = getLastYearMonthlyData();
   const yearlyTrainingData = getYearlyTrainingPercentages();
 
-  // Sort exercises alphabetically for the dropdown
-  const sortedExercises = [...exercises].sort((a, b) => a.name.localeCompare(b.name));
-  
-  // Get exercise comparison data
-  const exerciseComparison = selectedExerciseId ? getExerciseYearComparison(selectedExerciseId) : null;
-  const selectedExercise = exercises.find(e => e.id === selectedExerciseId);
-  
-  // Get max chart data
-  const maxChartData = maxChartExerciseId ? generateChartData(maxChartExerciseId) : [];
-  const maxChartExercise = exercises.find(e => e.id === maxChartExerciseId);
-
   const categories = [
     { value: 'abs', label: 'Abs', color: 'text-yellow-800 border-yellow-300', bgColor: '#FFE6A9' },
     { value: 'legs', label: 'Legs', color: 'text-green-800 border-green-300', bgColor: '#A7C1A8' },
@@ -521,6 +509,51 @@ export function Stats({ workouts, exercises, stats }: StatsProps) {
     { value: 'cardio', label: 'Cardio', color: 'text-teal-800 border-teal-300', bgColor: '#819A91' },
     { value: 'full-body', label: 'Full Body', color: 'text-rose-800 border-rose-300', bgColor: '#E5989B' }
   ];
+
+  const sortedCategories = [...categories].sort((a, b) => a.label.localeCompare(b.label));
+
+  // Sort exercises alphabetically for the dropdown
+  const sortedExercises = [...exercises].sort((a, b) => a.name.localeCompare(b.name));
+
+  const searchFilteredExercises = searchQuery.trim()
+    ? sortedExercises.filter(exercise => {
+        const categoryLabel = categories.find(c => c.value === exercise.category)?.label ?? '';
+        const description = exercise.description ?? '';
+        const lowerQuery = searchQuery.toLowerCase();
+
+        return (
+          exercise.name.toLowerCase().includes(lowerQuery) ||
+          description.toLowerCase().includes(lowerQuery) ||
+          categoryLabel.toLowerCase().includes(lowerQuery)
+        );
+      })
+    : sortedExercises;
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      if (selectedExerciseId && !sortedExercises.find(exercise => exercise.id === selectedExerciseId)) {
+        setSelectedExerciseId('');
+      }
+      return;
+    }
+
+    if (searchFilteredExercises.length === 1) {
+      setSelectedExerciseId(searchFilteredExercises[0].id);
+    } else if (
+      searchFilteredExercises.length > 0 &&
+      !searchFilteredExercises.find(exercise => exercise.id === selectedExerciseId)
+    ) {
+      setSelectedExerciseId(searchFilteredExercises[0].id);
+    }
+  }, [searchFilteredExercises, searchQuery, selectedExerciseId, sortedExercises]);
+
+  // Get exercise comparison data
+  const exerciseComparison = selectedExerciseId ? getExerciseYearComparison(selectedExerciseId) : null;
+  const selectedExercise = exercises.find(e => e.id === selectedExerciseId);
+
+  // Get max chart data
+  const maxChartData = selectedExerciseId ? generateChartData(selectedExerciseId) : [];
+  const maxChartExercise = selectedExercise;
 
   // Get month names for display
   const currentMonthName = new Date().toLocaleDateString('en-US', { month: 'long' });
@@ -604,39 +637,87 @@ export function Stats({ workouts, exercises, stats }: StatsProps) {
         </div>
       </div>
 
+      {/* Exercise Chart Selector */}
+      <div className="bg-solarized-base2 rounded-xl p-6 shadow-lg border border-solarized-base1">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-solarized-base02">
+          <Dumbbell size={20} className="text-solarized-orange" />
+          Exercise Charts
+        </h3>
+
+        <div className="space-y-4">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search size={20} className="text-solarized-base01" />
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search exercises..."
+              className="w-full pl-10 pr-4 py-3 border border-solarized-base1 rounded-lg focus:ring-2 focus:ring-solarized-orange focus:border-transparent bg-solarized-base3 text-solarized-base02 placeholder-solarized-base01"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              >
+                <X size={16} className="text-solarized-base01 hover:text-solarized-base02" />
+              </button>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-solarized-base01 mb-2">
+              Exercise
+            </label>
+            <select
+              value={selectedExerciseId}
+              onChange={(e) => setSelectedExerciseId(e.target.value)}
+              disabled={sortedExercises.length === 0}
+              className="w-full p-3 border border-solarized-base1 rounded-lg focus:ring-2 focus:ring-solarized-orange focus:border-transparent bg-solarized-base3 text-solarized-base02 disabled:text-solarized-base01 disabled:bg-solarized-base2/60"
+            >
+              {sortedExercises.length > 0 && (
+                <option value="">Choose an exercise...</option>
+              )}
+              {sortedExercises.length === 0 ? (
+                <option value="" disabled>No exercises available</option>
+              ) : searchQuery ? (
+                searchFilteredExercises.length > 0 ? (
+                  searchFilteredExercises.map(exercise => (
+                    <option key={exercise.id} value={exercise.id}>
+                      {exercise.name} ({categories.find(c => c.value === exercise.category)?.label})
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>No exercises found matching "{searchQuery}"</option>
+                )
+              ) : (
+                sortedCategories.map(category => {
+                  const categoryExercises = searchFilteredExercises.filter(exercise => exercise.category === category.value);
+                  if (categoryExercises.length === 0) return null;
+
+                  return (
+                    <optgroup key={category.value} label={category.label}>
+                      {categoryExercises.map(exercise => (
+                        <option key={exercise.id} value={exercise.id}>
+                          {exercise.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  );
+                })
+              )}
+            </select>
+          </div>
+        </div>
+      </div>
+
       {/* Exercise Year Comparison */}
       <div className="bg-solarized-base2 rounded-xl p-6 shadow-lg border border-solarized-base1">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-solarized-base02">
           <Activity size={20} className="text-solarized-orange" />
           Exercise Year Comparison
         </h3>
-        
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-solarized-base01 mb-2">
-            Select Exercise
-          </label>
-          <select
-            value={selectedExerciseId}
-            onChange={(e) => setSelectedExerciseId(e.target.value)}
-            className="w-full p-3 border border-solarized-base1 rounded-lg focus:ring-2 focus:ring-solarized-orange focus:border-transparent bg-solarized-base3 text-solarized-base02"
-          >
-            <option value="">Choose an exercise...</option>
-            {categories.sort((a, b) => a.label.localeCompare(b.label)).map(category => {
-              const categoryExercises = sortedExercises.filter(ex => ex.category === category.value);
-              if (categoryExercises.length === 0) return null;
-              
-              return (
-                <optgroup key={category.value} label={category.label}>
-                  {categoryExercises.map(exercise => (
-                    <option key={exercise.id} value={exercise.id}>
-                      {exercise.name}
-                    </option>
-                  ))}
-                </optgroup>
-              );
-            })}
-          </select>
-        </div>
 
         {exerciseComparison && selectedExercise && (
           <div className="space-y-4">
@@ -779,33 +860,6 @@ export function Stats({ workouts, exercises, stats }: StatsProps) {
           <LineChart size={20} className="text-solarized-violet" />
           Max Reps Over Time
         </h3>
-        
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-solarized-base01 mb-2">
-            Select Exercise
-          </label>
-          <select
-            value={maxChartExerciseId}
-            onChange={(e) => setMaxChartExerciseId(e.target.value)}
-            className="w-full p-3 border border-solarized-base1 rounded-lg focus:ring-2 focus:ring-solarized-violet focus:border-transparent bg-solarized-base3 text-solarized-base02"
-          >
-            <option value="">Choose an exercise...</option>
-            {categories.sort((a, b) => a.label.localeCompare(b.label)).map(category => {
-              const categoryExercises = sortedExercises.filter(ex => ex.category === category.value);
-              if (categoryExercises.length === 0) return null;
-              
-              return (
-                <optgroup key={category.value} label={category.label}>
-                  {categoryExercises.map(exercise => (
-                    <option key={exercise.id} value={exercise.id}>
-                      {exercise.name}
-                    </option>
-                  ))}
-                </optgroup>
-              );
-            })}
-          </select>
-        </div>
 
         {maxChartData.length > 0 && maxChartExercise ? (
           <div className="space-y-4">
@@ -923,7 +977,7 @@ export function Stats({ workouts, exercises, stats }: StatsProps) {
             <div className="space-y-2">
               <h5 className="font-medium text-solarized-base02">Progress Milestones</h5>
               <div className="max-h-32 overflow-y-auto space-y-1">
-                {getMaxRepsOverTime(maxChartExerciseId).slice(-5).reverse().map((milestone, index) => (
+                {getMaxRepsOverTime(selectedExerciseId).slice(-5).reverse().map((milestone, index) => (
                   <div key={index} className="flex items-center justify-between p-2 bg-solarized-violet/10 rounded border border-solarized-violet/20">
                     <span className="text-sm text-solarized-base02">
                       {milestone.date.toLocaleDateString('en-US', { 
@@ -940,7 +994,7 @@ export function Stats({ workouts, exercises, stats }: StatsProps) {
               </div>
             </div>
           </div>
-        ) : maxChartExerciseId ? (
+        ) : selectedExerciseId ? (
           <p className="text-solarized-base01 text-center py-8">
             No data available for this exercise in the last 3 years
           </p>
