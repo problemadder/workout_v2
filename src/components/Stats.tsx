@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, Target, Calendar, Percent, Dumbbell, BarChart3, Activity, LineChart, Search, X } from 'lucide-react';
+import { TrendingUp, Target, Calendar, Percent, Dumbbell, BarChart3, Activity, LineChart, Search, X, Clock, Repeat, TimerClock } from 'lucide-react';
 import { Workout, WorkoutStats, Exercise } from '../types';
 import { formatShortDate, getDaysAgo } from '../utils/dateUtils';
 import { formatSingleDecimal } from '../utils/formatUtils';
@@ -323,6 +323,89 @@ export function Stats({ workouts, exercises, stats }: StatsProps) {
     return monthlyData;
   };
 
+  // Get exercise sessions for the last 4 months
+  const getExerciseSessions = (exerciseId: string) => {
+    if (!exerciseId) return [];
+    
+    const fourMonthsAgo = new Date();
+    fourMonthsAgo.setMonth(fourMonthsAgo.getMonth() - 4);
+    fourMonthsAgo.setHours(0, 0, 0, 0);
+    
+    return workouts
+      .filter(workout => 
+        new Date(workout.date) >= fourMonthsAgo &&
+        workout.sets.some(set => set.exerciseId === exerciseId)
+      )
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  };
+
+  // Calculate sessions per month for last 4 months
+  const getSessionsPerMonth = (exerciseId: string) => {
+    const sessions = getExerciseSessions(exerciseId);
+    const monthlyData: Record<string, number> = {};
+    const last4Months = [];
+    
+    for (let i = 3; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const monthKey = d.toLocaleDateString('en-US', { month: 'short' });
+      monthlyData[monthKey] = 0;
+      last4Months.push(monthKey);
+    }
+    
+    sessions.forEach(workout => {
+      const monthKey = new Date(workout.date).toLocaleDateString('en-US', { month: 'short' });
+      if (monthlyData[monthKey] !== undefined) {
+        monthlyData[monthKey]++;
+      }
+    });
+    
+    return last4Months.map(month => ({
+      month,
+      count: monthlyData[month]
+    }));
+  };
+
+  // Calculate volume per session for last 4 months
+  const getVolumePerSession = (exerciseId: string) => {
+    const sessions = getExerciseSessions(exerciseId);
+    
+    return sessions.map(workout => {
+      const volume = workout.sets
+        .filter(set => set.exerciseId === exerciseId)
+        .reduce((total, set) => total + set.reps, 0);
+      
+      return {
+        date: new Date(workout.date),
+        volume
+      };
+    });
+  };
+
+  // Calculate rest days between sessions for last 4 months
+  const getRestDaysBetweenSessions = (exerciseId: string) => {
+    const sessions = getExerciseSessions(exerciseId);
+    if (sessions.length < 2) return [];
+    
+    const restDaysData = [];
+    for (let i = 1; i < sessions.length; i++) {
+      const current = new Date(sessions[i].date);
+      const previous = new Date(sessions[i-1].date);
+      // Reset hours to compare only days
+      const d1 = new Date(current.getFullYear(), current.getMonth(), current.getDate());
+      const d2 = new Date(previous.getFullYear(), previous.getMonth(), previous.getDate());
+      const diffTime = Math.abs(d1.getTime() - d2.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      restDaysData.push({
+        date: current,
+        days: diffDays
+      });
+    }
+    
+    return restDaysData;
+  };
+
   // Calculate sets per category for current week
   const getWeeklyCategoryStats = () => {
     const now = new Date();
@@ -554,6 +637,11 @@ export function Stats({ workouts, exercises, stats }: StatsProps) {
   // Get max chart data
   const maxChartData = selectedExerciseId ? generateChartData(selectedExerciseId) : [];
   const maxChartExercise = selectedExercise;
+
+  // Get sessions, volume and rest days data
+  const sessionsPerMonth = selectedExerciseId ? getSessionsPerMonth(selectedExerciseId) : [];
+  const volumePerSession = selectedExerciseId ? getVolumePerSession(selectedExerciseId) : [];
+  const restDaysBetweenSessions = selectedExerciseId ? getRestDaysBetweenSessions(selectedExerciseId) : [];
 
   // Get month names for display
   const currentMonthName = new Date().toLocaleDateString('en-US', { month: 'long' });
@@ -1001,6 +1089,133 @@ export function Stats({ workouts, exercises, stats }: StatsProps) {
         ) : (
           <p className="text-solarized-base01 text-center py-8">
             Select an exercise to see max reps progression over time
+          </p>
+        )}
+      </div>
+
+      {/* Sessions per Month Chart */}
+      <div className="bg-solarized-base2 rounded-xl p-6 shadow-lg border border-solarized-base1">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-solarized-base02">
+          <Repeat size={20} className="text-solarized-green" />
+          Sessions per Month (Last 4 Months)
+        </h3>
+        {selectedExerciseId && sessionsPerMonth.length > 0 ? (
+          <div className="space-y-3">
+            {sessionsPerMonth.map((data, index) => {
+              const maxSessions = Math.max(...sessionsPerMonth.map(d => d.count), 1);
+              return (
+                <div key={index} className="flex items-center gap-3">
+                  <div className="w-8 text-xs text-solarized-base01 font-medium">
+                    {data.month}
+                  </div>
+                  <div className="flex-1 bg-solarized-base1/20 rounded-full h-6 relative overflow-hidden">
+                    <div
+                      className="bg-solarized-green h-full rounded-full transition-all duration-300"
+                      style={{ width: `${(data.count / maxSessions) * 100}%` }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-xs font-medium text-solarized-base02">
+                        {data.count} sessions
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : selectedExerciseId ? (
+          <p className="text-solarized-base01 text-center py-8">
+            No sessions recorded for this exercise in the last 4 months
+          </p>
+        ) : (
+          <p className="text-solarized-base01 text-center py-8">
+            Select an exercise to see sessions per month
+          </p>
+        )}
+      </div>
+
+      {/* Volume per Session Chart */}
+      <div className="bg-solarized-base2 rounded-xl p-6 shadow-lg border border-solarized-base1">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-solarized-base02">
+          <Clock size={20} className="text-solarized-blue" />
+          Volume per Session (Last 4 Months)
+        </h3>
+        {selectedExerciseId && volumePerSession.length > 0 ? (
+          <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+            {volumePerSession.map((data, index) => {
+              const maxVolume = Math.max(...volumePerSession.map(d => d.volume), 1);
+              return (
+                <div key={index} className="flex items-center gap-3">
+                  <div className="w-16 text-xs text-solarized-base01 font-medium">
+                    {formatShortDate(data.date)}
+                  </div>
+                  <div className="flex-1 bg-solarized-base1/20 rounded-full h-6 relative overflow-hidden">
+                    <div
+                      className="bg-solarized-blue h-full rounded-full transition-all duration-300"
+                      style={{ width: `${(data.volume / maxVolume) * 100}%` }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-xs font-medium text-solarized-base02">
+                        {data.volume} total reps
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : selectedExerciseId ? (
+          <p className="text-solarized-base01 text-center py-8">
+            No session volume data for the last 4 months
+          </p>
+        ) : (
+          <p className="text-solarized-base01 text-center py-8">
+            Select an exercise to see volume per session
+          </p>
+        )}
+      </div>
+
+      {/* Rest Days Between Sessions Chart */}
+      <div className="bg-solarized-base2 rounded-xl p-6 shadow-lg border border-solarized-base1">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-solarized-base02">
+          <TimerClock size={20} className="text-solarized-orange" />
+          Rest Days Between Sessions (Last 4 Months)
+        </h3>
+        {selectedExerciseId && restDaysBetweenSessions.length > 0 ? (
+          <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+            {restDaysBetweenSessions.map((data, index) => {
+              const maxDays = Math.max(...restDaysBetweenSessions.map(d => d.days), 1);
+              return (
+                <div key={index} className="flex items-center gap-3">
+                  <div className="w-16 text-xs text-solarized-base01 font-medium">
+                    {formatShortDate(data.date)}
+                  </div>
+                  <div className="flex-1 bg-solarized-base1/20 rounded-full h-6 relative overflow-hidden">
+                    <div
+                      className="bg-solarized-orange h-full rounded-full transition-all duration-300"
+                      style={{ width: `${(data.days / maxDays) * 100}%` }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-xs font-medium text-solarized-base02">
+                        {data.days} {data.days === 1 ? 'day' : 'days'} rest
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : selectedExerciseId && getExerciseSessions(selectedExerciseId).length > 0 ? (
+          <p className="text-solarized-base01 text-center py-8">
+            Need at least 2 sessions to calculate rest days
+          </p>
+        ) : selectedExerciseId ? (
+          <p className="text-solarized-base01 text-center py-8">
+            No session data for the last 4 months
+          </p>
+        ) : (
+          <p className="text-solarized-base01 text-center py-8">
+            Select an exercise to see rest days between sessions
           </p>
         )}
       </div>
