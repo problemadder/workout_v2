@@ -496,6 +496,153 @@ export function Stats({ workouts, exercises }: StatsProps) {
     }
   };
 
+  // Calculate trend data by comparing last 6 weeks with previous 6 weeks
+  const getConsistencyTrends = (): Record<string, {
+    direction: 'improving' | 'declining' | 'stable' | 'insufficient';
+    percentageChange: number;
+    recentMedian: number;
+    pastMedian: number;
+  }> => {
+    try {
+      const now = new Date();
+      
+      // Define time periods
+      const sixWeeksAgo = new Date(now);
+      sixWeeksAgo.setDate(now.getDate() - 42);
+      sixWeeksAgo.setHours(0, 0, 0, 0);
+      
+      const twelveWeeksAgo = new Date(now);
+      twelveWeeksAgo.setDate(now.getDate() - 84);
+      twelveWeeksAgo.setHours(0, 0, 0, 0);
+      
+      // Group workouts by category and date
+      const categoryWorkoutDates: Record<string, Date[]> = {};
+      
+      workouts.forEach(workout => {
+        try {
+          const parsedDate = safeParseDate(workout.date);
+          const workoutDate = new Date(
+            parsedDate.getFullYear(),
+            parsedDate.getMonth(),
+            parsedDate.getDate()
+          );
+          
+          workout.sets.forEach(set => {
+            const exercise = exercises.find(e => e.id === set.exerciseId);
+            if (exercise) {
+              if (!categoryWorkoutDates[exercise.category]) {
+                categoryWorkoutDates[exercise.category] = [];
+              }
+              const hasDate = categoryWorkoutDates[exercise.category].some(
+                d => d.getTime() === workoutDate.getTime()
+              );
+              if (!hasDate) {
+                categoryWorkoutDates[exercise.category].push(workoutDate);
+              }
+            }
+          });
+        } catch (error) {
+          console.error('Error processing workout for trend calculation:', error);
+        }
+      });
+      
+      const trends: Record<string, {
+        direction: 'improving' | 'declining' | 'stable' | 'insufficient';
+        percentageChange: number;
+        recentMedian: number;
+        pastMedian: number;
+      }> = {};
+      
+      Object.entries(categoryWorkoutDates).forEach(([category, dates]) => {
+        try {
+          const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
+          
+          // Split dates into recent (last 6 weeks) and past (previous 6 weeks)
+          const recentDates = sortedDates.filter(d => d >= sixWeeksAgo);
+          const pastDates = sortedDates.filter(d => d >= twelveWeeksAgo && d < sixWeeksAgo);
+          
+          // Need at least 2 workouts in each period for valid trend
+          if (recentDates.length < 2 || pastDates.length < 2) {
+            trends[category] = {
+              direction: 'insufficient',
+              percentageChange: 0,
+              recentMedian: recentDates.length > 0 ? calculateMedianRestDays(recentDates) : 0,
+              pastMedian: pastDates.length > 0 ? calculateMedianRestDays(pastDates) : 0
+            };
+            return;
+          }
+          
+          // Calculate median rest days for each period
+          const recentMedian = calculateMedianRestDays(recentDates);
+          const pastMedian = calculateMedianRestDays(pastDates);
+          
+          // Calculate percentage change
+          // Lower median = more frequent = improving
+          // Formula: ((past - recent) / past) * 100
+          // Positive = improving, Negative = declining
+          let percentageChange = 0;
+          if (pastMedian > 0) {
+            percentageChange = Math.round(((pastMedian - recentMedian) / pastMedian) * 100);
+          }
+          
+          // Determine trend direction based on threshold
+          let direction: 'improving' | 'declining' | 'stable';
+          if (percentageChange > 10) {
+            direction = 'improving';
+          } else if (percentageChange < -10) {
+            direction = 'declining';
+          } else {
+            direction = 'stable';
+          }
+          
+          trends[category] = {
+            direction,
+            percentageChange,
+            recentMedian,
+            pastMedian
+          };
+        } catch (error) {
+          console.error(`Error calculating trend for category ${category}:`, error);
+          trends[category] = {
+            direction: 'insufficient',
+            percentageChange: 0,
+            recentMedian: 0,
+            pastMedian: 0
+          };
+        }
+      });
+      
+      return trends;
+    } catch (error) {
+      console.error('Error in getConsistencyTrends:', error);
+      return {};
+    }
+  };
+  
+  // Helper function to calculate median rest days from workout dates
+  const calculateMedianRestDays = (dates: Date[]): number => {
+    if (dates.length < 2) return 0;
+    
+    const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
+    const restDays: number[] = [];
+    
+    for (let i = 1; i < sortedDates.length; i++) {
+      const diffTime = sortedDates[i].getTime() - sortedDates[i - 1].getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays > 0) {
+        restDays.push(diffDays);
+      }
+    }
+    
+    if (restDays.length === 0) return 0;
+    
+    const sortedRestDays = [...restDays].sort((a, b) => a - b);
+    const medianIndex = Math.floor(sortedRestDays.length / 2);
+    return sortedRestDays.length % 2 === 0
+      ? (sortedRestDays[medianIndex - 1] + sortedRestDays[medianIndex]) / 2
+      : sortedRestDays[medianIndex];
+  };
+
   // Calculate category consistency stats for the last 4 months (current month + last 3 months)
   const getCategoryConsistencyStats = () => {
     try {
@@ -843,6 +990,12 @@ export function Stats({ workouts, exercises }: StatsProps) {
     range: string;
   }> = [];
 
+  let categoryConsistencyTrends: Record<string, {
+    direction: 'improving' | 'declining' | 'stable' | 'insufficient';
+    percentageChange: number;
+    recentMedian: number;
+    pastMedian: number;
+  }> = {};
   try {
     exerciseStats = getExerciseStats(selectedYear);
     availableYears = getAvailableYears();
@@ -853,6 +1006,7 @@ export function Stats({ workouts, exercises }: StatsProps) {
     yearPercentage = getCurrentYearPercentage();
     weeklyCategoryStats = getWeeklyCategoryStats();
     monthlyCategoryStats = getMonthlyCategoryStats();
+    categoryConsistencyTrends = getConsistencyTrends();
     lastMonthlyCategoryStats = getLastMonthlyCategoryStats();
     thisYearMonthlyData = getThisYearMonthlyData();
     lastYearMonthlyData = getLastYearMonthlyData();
@@ -1663,7 +1817,13 @@ export function Stats({ workouts, exercises }: StatsProps) {
                 color: category?.bgColor || '#93a1a1',
                 workoutCount: typeof stat.workoutCount === 'number' ? stat.workoutCount : 0,
                 pattern: stat.pattern || 'Stable',
-                range: stat.range || 'N/A'
+                range: stat.range || 'N/A',
+                trendData: categoryConsistencyTrends[stat.category] || {
+                  direction: 'insufficient',
+                  percentageChange: 0,
+                  recentMedian: 0,
+                  pastMedian: 0
+                }
               };
             });
 
