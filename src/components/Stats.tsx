@@ -3,6 +3,7 @@ import { TrendingUp, Target, Calendar, Percent, Dumbbell, BarChart3, Activity, L
 import { Workout, Exercise } from '../types';
 import { formatShortDate } from '../utils/dateUtils';
 import { formatSingleDecimal } from '../utils/formatUtils';
+import { PieChart } from './PieChart';
 
 interface StatsProps {
   workouts: Workout[];
@@ -1287,25 +1288,19 @@ export function Stats({ workouts, exercises }: StatsProps) {
           Sets per Category - This Week
         </h3>
         {Object.keys(weeklyCategoryStats).length > 0 ? (
-          <div className="grid grid-cols-2 gap-3">
-            {categories.map(category => {
-              const count = weeklyCategoryStats[category.value] || 0;
-              if (count === 0) return null;
-              
-              return (
-                <div key={category.value} className="flex items-center justify-between p-3 bg-solarized-base1/10 rounded-lg border border-solarized-base1/20">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-solarized-base02">{category.label}</span>
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-sm font-bold border ${category.color}`}>
-                    {count} sets
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          <PieChart
+            data={categories
+              .filter(category => weeklyCategoryStats[category.value] > 0)
+              .map(category => ({
+                label: category.label,
+                value: weeklyCategoryStats[category.value] || 0,
+                color: category.bgColor
+              }))}
+            size={200}
+            emptyMessage="No sets completed this week"
+          />
         ) : (
-          <p className="text-solarized-base01 text-center py-4">No sets completed this week</p>
+          <PieChart data={[]} size={200} emptyMessage="No sets completed this week" />
         )}
       </div>
 
@@ -1316,25 +1311,19 @@ export function Stats({ workouts, exercises }: StatsProps) {
           Sets per Category - {currentMonthName}
         </h3>
         {Object.keys(monthlyCategoryStats).length > 0 ? (
-          <div className="grid grid-cols-2 gap-3">
-            {categories.map(category => {
-              const count = monthlyCategoryStats[category.value] || 0;
-              if (count === 0) return null;
-              
-              return (
-                <div key={category.value} className="flex items-center justify-between p-3 bg-solarized-base1/10 rounded-lg border border-solarized-base1/20">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-solarized-base02">{category.label}</span>
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-sm font-bold border ${category.color}`}>
-                    {count} sets
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          <PieChart
+            data={categories
+              .filter(category => monthlyCategoryStats[category.value] > 0)
+              .map(category => ({
+                label: category.label,
+                value: monthlyCategoryStats[category.value] || 0,
+                color: category.bgColor
+              }))}
+            size={200}
+            emptyMessage={`No sets completed in ${currentMonthName}`}
+          />
         ) : (
-          <p className="text-solarized-base01 text-center py-4">No sets completed this month</p>
+          <PieChart data={[]} size={200} emptyMessage={`No sets completed in ${currentMonthName}`} />
         )}
       </div>
 
@@ -1345,25 +1334,19 @@ export function Stats({ workouts, exercises }: StatsProps) {
           Sets per Category - {lastMonthName}
         </h3>
         {Object.keys(lastMonthlyCategoryStats).length > 0 ? (
-          <div className="grid grid-cols-2 gap-3">
-            {categories.map(category => {
-              const count = lastMonthlyCategoryStats[category.value] || 0;
-              if (count === 0) return null;
-              
-              return (
-                <div key={category.value} className="flex items-center justify-between p-3 bg-solarized-base1/10 rounded-lg border border-solarized-base1/20">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-solarized-base02">{category.label}</span>
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-sm font-bold border ${category.color}`}>
-                    {count} sets
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          <PieChart
+            data={categories
+              .filter(category => lastMonthlyCategoryStats[category.value] > 0)
+              .map(category => ({
+                label: category.label,
+                value: lastMonthlyCategoryStats[category.value] || 0,
+                color: category.bgColor
+              }))}
+            size={200}
+            emptyMessage={`No sets completed in ${lastMonthName}`}
+          />
         ) : (
-          <p className="text-solarized-base01 text-center py-4">No sets completed in {lastMonthName}</p>
+          <PieChart data={[]} size={200} emptyMessage={`No sets completed in ${lastMonthName}`} />
         )}
       </div>
 
