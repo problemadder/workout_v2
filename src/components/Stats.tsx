@@ -5,6 +5,9 @@ import { formatShortDate } from '../utils/dateUtils';
 import { formatSingleDecimal } from '../utils/formatUtils';
 import { PieChart } from './PieChart';
 import { BarChart } from './BarChart';
+import { ExerciseConsistencyChart } from './ExerciseConsistencyChart';
+import { ExerciseConsistencyComparison } from './ExerciseConsistencyComparison';
+import { useExerciseConsistencyData, useExerciseYearComparison, PeriodType } from '../hooks/useExerciseConsistencyData';
 
 interface StatsProps {
   workouts: Workout[];
@@ -15,6 +18,7 @@ export function Stats({ workouts, exercises }: StatsProps) {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [consistencyPeriod, setConsistencyPeriod] = useState<PeriodType>('4months');
 
   const getExerciseStats = (year?: number) => {
     const filteredWorkouts = year 
@@ -49,7 +53,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
     const currentYear = new Date().getFullYear();
     const lastYear = currentYear - 1;
     
-    // Get workouts for current year and last year
     const currentYearWorkouts = workouts.filter(workout => 
       new Date(workout.date).getFullYear() === currentYear
     );
@@ -57,7 +60,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
       new Date(workout.date).getFullYear() === lastYear
     );
     
-    // Calculate total reps for each year
     const currentYearReps = currentYearWorkouts.reduce((total, workout) => {
       return total + workout.sets
         .filter(set => set.exerciseId === exerciseId)
@@ -70,7 +72,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
         .reduce((setTotal, set) => setTotal + set.reps, 0);
     }, 0);
     
-    // Calculate workout days for each year
     const currentYearWorkoutDays = new Set(
       currentYearWorkouts
         .filter(workout => workout.sets.some(set => set.exerciseId === exerciseId))
@@ -83,18 +84,15 @@ export function Stats({ workouts, exercises }: StatsProps) {
         .map(workout => new Date(workout.date).toDateString())
     ).size;
     
-    // Calculate daily averages
     const currentYearDailyAvg = currentYearWorkoutDays > 0 ? formatSingleDecimal(currentYearReps / currentYearWorkoutDays) : 0;
     const lastYearDailyAvg = lastYearWorkoutDays > 0 ? formatSingleDecimal(lastYearReps / lastYearWorkoutDays) : 0;
     
-    // Calculate total days in each year (up to today for current year)
     const today = new Date();
     const currentYearTotalDays = today.getFullYear() === currentYear 
       ? Math.floor((today.getTime() - new Date(currentYear, 0, 1).getTime()) / (1000 * 60 * 60 * 24)) + 1
       : 365;
-    const lastYearTotalDays = 365; // Assume non-leap year for simplicity
+    const lastYearTotalDays = 365;
     
-    // Calculate reps per day per year (including rest days)
     const currentYearRepsPerDay = formatSingleDecimal(currentYearReps / currentYearTotalDays);
     const lastYearRepsPerDay = formatSingleDecimal(lastYearReps / lastYearTotalDays);
     
@@ -137,11 +135,10 @@ export function Stats({ workouts, exercises }: StatsProps) {
     });
   };
 
-  // Calculate current week percentage (Monday to Sunday)
   const getCurrentWeekPercentage = () => {
     const now = new Date();
-    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay; // Get Monday of current week
+    const currentDay = now.getDay();
+    const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
     const monday = new Date(now);
     monday.setDate(now.getDate() + mondayOffset);
     monday.setHours(0, 0, 0, 0);
@@ -159,14 +156,12 @@ export function Stats({ workouts, exercises }: StatsProps) {
       )
     ).length;
 
-    // Only count days up to today
     const today = new Date();
     const daysPassedThisWeek = daysInWeek.filter(day => day <= today).length;
     
     return Math.round((workoutDays / daysPassedThisWeek) * 100);
   };
 
-  // Calculate current month percentage
   const getCurrentMonthPercentage = () => {
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -189,7 +184,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
     return Math.round((workoutDays / daysInMonth.length) * 100);
   };
 
-  // Calculate current year percentage
   const getCurrentYearPercentage = () => {
     const now = new Date();
     const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
@@ -212,7 +206,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
     return Math.round((workoutDays / daysInYear.length) * 100);
   };
 
-  // Calculate yearly training percentages for all tracked years
   const getYearlyTrainingPercentages = () => {
     const years = getAvailableYears();
     const currentYear = new Date().getFullYear();
@@ -220,8 +213,8 @@ export function Stats({ workouts, exercises }: StatsProps) {
     return years.map(year => {
       const firstDayOfYear = new Date(year, 0, 1);
       const lastDayOfYear = year === currentYear 
-        ? new Date() // Up to today for current year
-        : new Date(year, 11, 31); // Full year for past years
+        ? new Date()
+        : new Date(year, 11, 31);
       
       const daysInPeriod = [];
       const currentDate = new Date(firstDayOfYear);
@@ -249,7 +242,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
     });
   };
 
-  // Calculate monthly training percentages for this year
   const getThisYearMonthlyData = () => {
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth();
@@ -258,8 +250,8 @@ export function Stats({ workouts, exercises }: StatsProps) {
     for (let month = 0; month <= currentMonth; month++) {
       const firstDay = new Date(currentYear, month, 1);
       const lastDay = month === currentMonth 
-        ? new Date() // Up to today for current month
-        : new Date(currentYear, month + 1, 0); // Last day of month for past months
+        ? new Date()
+        : new Date(currentYear, month + 1, 0);
 
       const daysInPeriod = [];
       const currentDate = new Date(firstDay);
@@ -288,7 +280,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
     return monthlyData;
   };
 
-  // Calculate monthly training percentages for last year
   const getLastYearMonthlyData = () => {
     const lastYear = new Date().getFullYear() - 1;
     const monthlyData = [];
@@ -324,7 +315,21 @@ export function Stats({ workouts, exercises }: StatsProps) {
     return monthlyData;
   };
 
-  // Get exercise sessions for the last 4 months
+  const safeParseDate = (dateInput: Date | string): Date => {
+    try {
+      if (dateInput instanceof Date) {
+        return new Date(dateInput.getTime());
+      }
+      if (typeof dateInput === 'string') {
+        return new Date(dateInput);
+      }
+      return new Date();
+    } catch (error) {
+      console.error('Error parsing date:', error);
+      return new Date();
+    }
+  };
+
   const getExerciseSessions = (exerciseId: string) => {
     try {
       if (!exerciseId) return [];
@@ -356,7 +361,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
     }
   };
 
-  // Calculate sessions per month for last 4 months
   const getSessionsPerMonth = (exerciseId: string) => {
     try {
       const sessions = getExerciseSessions(exerciseId);
@@ -392,7 +396,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
     }
   };
 
-  // Calculate volume per session for last 4 months
   const getVolumePerSession = (exerciseId: string) => {
     try {
       const sessions = getExerciseSessions(exerciseId);
@@ -418,366 +421,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
     }
   };
 
-  // Calculate rest days between sessions for last 4 months
-  const getRestDaysBetweenSessions = (exerciseId: string) => {
-    try {
-      const sessions = getExerciseSessions(exerciseId);
-      if (sessions.length < 2) return [];
-      
-      const restDaysData = [];
-      for (let i = 1; i < sessions.length; i++) {
-        try {
-          const current = safeParseDate(sessions[i].date);
-          const previous = safeParseDate(sessions[i-1].date);
-          // Reset hours to compare only days
-          const d1 = new Date(current.getFullYear(), current.getMonth(), current.getDate());
-          const d2 = new Date(previous.getFullYear(), previous.getMonth(), previous.getDate());
-          const diffTime = Math.abs(d1.getTime() - d2.getTime());
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          
-          restDaysData.push({
-            date: current,
-            days: diffDays
-          });
-        } catch (error) {
-          console.error(`Error calculating rest days at index ${i}:`, error);
-        }
-      }
-      
-      return restDaysData;
-    } catch (error) {
-      console.error('Error in getRestDaysBetweenSessions:', error);
-      return [];
-    }
-  };
-
-  // Helper function to safely parse dates (handles both Date objects and ISO strings)
-  const safeParseDate = (dateInput: Date | string): Date => {
-    try {
-      if (dateInput instanceof Date) {
-        return new Date(dateInput.getTime());
-      }
-      if (typeof dateInput === 'string') {
-        return new Date(dateInput);
-      }
-      return new Date();
-    } catch (error) {
-      console.error('Error parsing date:', error);
-      return new Date();
-    }
-  };
-
-  // Helper function to calculate consistency pattern based on IQR
-  const getConsistencyPattern = (restDays: number[]): 'Stable' | 'Variable' | 'Irregular' => {
-    try {
-      if (!Array.isArray(restDays) || restDays.length < 2) return 'Stable';
-      
-      // Filter out invalid values
-      const validRestDays = restDays.filter(d => typeof d === 'number' && !isNaN(d) && d >= 0);
-      if (validRestDays.length < 2) return 'Stable';
-      
-      // Sort the array
-      const sorted = [...validRestDays].sort((a, b) => a - b);
-      
-      // Calculate quartiles
-      const q1Index = Math.floor(sorted.length * 0.25);
-      const q3Index = Math.floor(sorted.length * 0.75);
-      const q1 = sorted[q1Index];
-      const q3 = sorted[q3Index];
-      const iqr = q3 - q1;
-      
-      // Determine pattern based on IQR
-      if (iqr <= 2) return 'Stable';
-      if (iqr <= 7) return 'Variable';
-      return 'Irregular';
-    } catch (error) {
-      console.error('Error in getConsistencyPattern:', error);
-      return 'Stable';
-    }
-  };
-
-  // Calculate trend data by comparing last 6 weeks with previous 6 weeks
-  const getConsistencyTrends = (): Record<string, {
-    direction: 'improving' | 'declining' | 'stable' | 'insufficient';
-    percentageChange: number;
-    recentMedian: number;
-    pastMedian: number;
-  }> => {
-    try {
-      const now = new Date();
-      
-      // Define time periods
-      const sixWeeksAgo = new Date(now);
-      sixWeeksAgo.setDate(now.getDate() - 42);
-      sixWeeksAgo.setHours(0, 0, 0, 0);
-      
-      const twelveWeeksAgo = new Date(now);
-      twelveWeeksAgo.setDate(now.getDate() - 84);
-      twelveWeeksAgo.setHours(0, 0, 0, 0);
-      
-      // Group workouts by category and date
-      const categoryWorkoutDates: Record<string, Date[]> = {};
-      
-      workouts.forEach(workout => {
-        try {
-          const parsedDate = safeParseDate(workout.date);
-          const workoutDate = new Date(
-            parsedDate.getFullYear(),
-            parsedDate.getMonth(),
-            parsedDate.getDate()
-          );
-          
-          workout.sets.forEach(set => {
-            const exercise = exercises.find(e => e.id === set.exerciseId);
-            if (exercise) {
-              if (!categoryWorkoutDates[exercise.category]) {
-                categoryWorkoutDates[exercise.category] = [];
-              }
-              const hasDate = categoryWorkoutDates[exercise.category].some(
-                d => d.getTime() === workoutDate.getTime()
-              );
-              if (!hasDate) {
-                categoryWorkoutDates[exercise.category].push(workoutDate);
-              }
-            }
-          });
-        } catch (error) {
-          console.error('Error processing workout for trend calculation:', error);
-        }
-      });
-      
-      const trends: Record<string, {
-        direction: 'improving' | 'declining' | 'stable' | 'insufficient';
-        percentageChange: number;
-        recentMedian: number;
-        pastMedian: number;
-      }> = {};
-      
-      Object.entries(categoryWorkoutDates).forEach(([category, dates]) => {
-        try {
-          const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
-          
-          // Split dates into recent (last 6 weeks) and past (previous 6 weeks)
-          const recentDates = sortedDates.filter(d => d >= sixWeeksAgo);
-          const pastDates = sortedDates.filter(d => d >= twelveWeeksAgo && d < sixWeeksAgo);
-          
-          // Need at least 2 workouts in each period for valid trend
-          if (recentDates.length < 2 || pastDates.length < 2) {
-            trends[category] = {
-              direction: 'insufficient',
-              percentageChange: 0,
-              recentMedian: recentDates.length > 0 ? calculateMedianRestDays(recentDates) : 0,
-              pastMedian: pastDates.length > 0 ? calculateMedianRestDays(pastDates) : 0
-            };
-            return;
-          }
-          
-          // Calculate median rest days for each period
-          const recentMedian = calculateMedianRestDays(recentDates);
-          const pastMedian = calculateMedianRestDays(pastDates);
-          
-          // Calculate percentage change
-          // Lower median = more frequent = improving
-          // Formula: ((past - recent) / past) * 100
-          // Positive = improving, Negative = declining
-          let percentageChange = 0;
-          if (pastMedian > 0) {
-            percentageChange = Math.round(((pastMedian - recentMedian) / pastMedian) * 100);
-          }
-          
-          // Determine trend direction based on threshold
-          let direction: 'improving' | 'declining' | 'stable';
-          if (percentageChange > 10) {
-            direction = 'improving';
-          } else if (percentageChange < -10) {
-            direction = 'declining';
-          } else {
-            direction = 'stable';
-          }
-          
-          trends[category] = {
-            direction,
-            percentageChange,
-            recentMedian,
-            pastMedian
-          };
-        } catch (error) {
-          console.error(`Error calculating trend for category ${category}:`, error);
-          trends[category] = {
-            direction: 'insufficient',
-            percentageChange: 0,
-            recentMedian: 0,
-            pastMedian: 0
-          };
-        }
-      });
-      
-      return trends;
-    } catch (error) {
-      console.error('Error in getConsistencyTrends:', error);
-      return {};
-    }
-  };
-  
-  // Helper function to calculate median rest days from workout dates
-  const calculateMedianRestDays = (dates: Date[]): number => {
-    if (dates.length < 2) return 0;
-    
-    const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
-    const restDays: number[] = [];
-    
-    for (let i = 1; i < sortedDates.length; i++) {
-      const diffTime = sortedDates[i].getTime() - sortedDates[i - 1].getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (diffDays > 0) {
-        restDays.push(diffDays);
-      }
-    }
-    
-    if (restDays.length === 0) return 0;
-    
-    const sortedRestDays = [...restDays].sort((a, b) => a - b);
-    const medianIndex = Math.floor(sortedRestDays.length / 2);
-    return sortedRestDays.length % 2 === 0
-      ? (sortedRestDays[medianIndex - 1] + sortedRestDays[medianIndex]) / 2
-      : sortedRestDays[medianIndex];
-  };
-
-  // Calculate category consistency stats for the last 4 months (current month + last 3 months)
-  const getCategoryConsistencyStats = () => {
-    try {
-      const now = new Date();
-      const fourMonthsAgo = new Date(now);
-      fourMonthsAgo.setMonth(now.getMonth() - 4);
-      fourMonthsAgo.setHours(0, 0, 0, 0);
-
-      // Filter workouts for the last 4 months with safe date parsing
-      const recentWorkouts = workouts.filter(workout => {
-        try {
-          const workoutDate = safeParseDate(workout.date);
-          return workoutDate >= fourMonthsAgo;
-        } catch (error) {
-          return false;
-        }
-      });
-
-      // Group workouts by category and date
-      const categoryWorkoutDates: Record<string, Date[]> = {};
-      
-      recentWorkouts.forEach(workout => {
-        try {
-          // Safe date parsing - handles both Date objects and strings from localStorage
-          const parsedDate = safeParseDate(workout.date);
-          const workoutDate = new Date(
-            parsedDate.getFullYear(),
-            parsedDate.getMonth(),
-            parsedDate.getDate()
-          );
-          
-          workout.sets.forEach(set => {
-            const exercise = exercises.find(e => e.id === set.exerciseId);
-            if (exercise) {
-              if (!categoryWorkoutDates[exercise.category]) {
-                categoryWorkoutDates[exercise.category] = [];
-              }
-              // Only add unique dates for each category
-              const hasDate = categoryWorkoutDates[exercise.category].some(
-                d => d.getTime() === workoutDate.getTime()
-              );
-              if (!hasDate) {
-                categoryWorkoutDates[exercise.category].push(workoutDate);
-              }
-            }
-          });
-        } catch (error) {
-          console.error('Error processing workout for consistency stats:', error);
-        }
-      });
-
-      // Calculate rest days and metrics for each category
-      const categoryStats: Array<{
-        category: string;
-        workoutCount: number;
-        restDays: number[];
-        medianRestDays: number;
-        pattern: 'Stable' | 'Variable' | 'Irregular';
-        range: string;
-      }> = [];
-
-      Object.entries(categoryWorkoutDates).forEach(([category, dates]) => {
-        try {
-          const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
-          
-          if (sortedDates.length >= 2) {
-            const restDays: number[] = [];
-            for (let i = 1; i < sortedDates.length; i++) {
-              const diffTime = sortedDates[i].getTime() - sortedDates[i - 1].getTime();
-              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-              if (diffDays > 0) {
-                restDays.push(diffDays);
-              }
-            }
-            
-            if (restDays.length === 0) {
-              // All workouts on same day
-              categoryStats.push({
-                category,
-                workoutCount: sortedDates.length,
-                restDays: [],
-                medianRestDays: 0,
-                pattern: 'Stable',
-                range: '0 days'
-              });
-              return;
-            }
-            
-            // Calculate median
-            const sortedRestDays = [...restDays].sort((a, b) => a - b);
-            const medianIndex = Math.floor(sortedRestDays.length / 2);
-            const medianRestDays = sortedRestDays.length % 2 === 0
-              ? (sortedRestDays[medianIndex - 1] + sortedRestDays[medianIndex]) / 2
-              : sortedRestDays[medianIndex];
-            
-            // Calculate range
-            const minRestDays = Math.min(...restDays);
-            const maxRestDays = Math.max(...restDays);
-            const range = `${minRestDays}-${maxRestDays} days`;
-            
-            // Determine pattern
-            const pattern = getConsistencyPattern(restDays);
-            
-            categoryStats.push({
-              category,
-              workoutCount: sortedDates.length,
-              restDays,
-              medianRestDays: Math.round(medianRestDays * 10) / 10,
-              pattern,
-              range
-            });
-          } else if (sortedDates.length === 1) {
-            // Only one workout, cannot calculate consistency
-            categoryStats.push({
-              category,
-              workoutCount: 1,
-              restDays: [],
-              medianRestDays: 0,
-              pattern: 'Stable',
-              range: 'N/A'
-            });
-          }
-        } catch (error) {
-          console.error(`Error calculating stats for category ${category}:`, error);
-        }
-      });
-
-      return categoryStats;
-    } catch (error) {
-      console.error('Error in getCategoryConsistencyStats:', error);
-      return [];
-    }
-  };
-
-  // Calculate sets per category for current week
   const getWeeklyCategoryStats = () => {
     const now = new Date();
     const currentDay = now.getDay();
@@ -809,7 +452,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
     return categoryCounts;
   };
 
-  // Calculate sets per category for current month
   const getMonthlyCategoryStats = () => {
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -835,7 +477,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
     return categoryCounts;
   };
 
-  // Calculate sets per category for last month
   const getLastMonthlyCategoryStats = () => {
     const now = new Date();
     const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -861,7 +502,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
     return categoryCounts;
   };
 
-  // Get max reps over time for selected exercise (last 3 years)
   const getMaxRepsOverTime = (exerciseId: string) => {
     try {
       if (!exerciseId) return [];
@@ -918,28 +558,23 @@ export function Stats({ workouts, exercises }: StatsProps) {
     }
   };
 
-  // Generate chart points for area chart
   const generateChartData = (exerciseId: string) => {
     try {
       const maxData = getMaxRepsOverTime(exerciseId);
       if (!Array.isArray(maxData) || maxData.length === 0) return [];
       
-      // Create a more complete timeline
       const chartData = [];
       let currentMax = 0;
       
-      // Start from 3 years ago
       const startDate = new Date();
       startDate.setFullYear(startDate.getFullYear() - 3);
       
-      // Add initial point
       chartData.push({
         date: startDate,
         maxReps: 0,
         setPosition: 0
       });
       
-      // Add all max improvement points
       maxData.forEach(point => {
         try {
           chartData.push(point);
@@ -949,7 +584,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
         }
       });
       
-      // Add current point if needed
       const lastPoint = maxData[maxData.length - 1];
       const today = new Date();
       if (!lastPoint || lastPoint.date.toDateString() !== today.toDateString()) {
@@ -967,7 +601,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
     }
   };
 
-  // Safely calculate all stats with error handling
   let exerciseStats: Array<{ exercise?: typeof exercises[0]; count: number }> = [];
   let availableYears: number[] = [];
   let weeklyData: Array<{ date: Date; sets: number; reps: number }> = [];
@@ -981,21 +614,7 @@ export function Stats({ workouts, exercises }: StatsProps) {
   let thisYearMonthlyData: Array<{ month: string; percentage: number; workoutDays: number; totalDays: number }> = [];
   let lastYearMonthlyData: Array<{ month: string; percentage: number; workoutDays: number; totalDays: number }> = [];
   let yearlyTrainingData: Array<{ year: number; percentage: number; workoutDays: number; totalDays: number; isCurrent: boolean }> = [];
-  let categoryConsistencyStats: Array<{
-    category: string;
-    workoutCount: number;
-    restDays: number[];
-    medianRestDays: number;
-    pattern: 'Stable' | 'Variable' | 'Irregular';
-    range: string;
-  }> = [];
 
-  let categoryConsistencyTrends: Record<string, {
-    direction: 'improving' | 'declining' | 'stable' | 'insufficient';
-    percentageChange: number;
-    recentMedian: number;
-    pastMedian: number;
-  }> = {};
   try {
     exerciseStats = getExerciseStats(selectedYear);
     availableYears = getAvailableYears();
@@ -1006,12 +625,10 @@ export function Stats({ workouts, exercises }: StatsProps) {
     yearPercentage = getCurrentYearPercentage();
     weeklyCategoryStats = getWeeklyCategoryStats();
     monthlyCategoryStats = getMonthlyCategoryStats();
-    categoryConsistencyTrends = getConsistencyTrends();
     lastMonthlyCategoryStats = getLastMonthlyCategoryStats();
     thisYearMonthlyData = getThisYearMonthlyData();
     lastYearMonthlyData = getLastYearMonthlyData();
     yearlyTrainingData = getYearlyTrainingPercentages();
-    categoryConsistencyStats = getCategoryConsistencyStats();
   } catch (error) {
     console.error('Error calculating stats:', error);
   }
@@ -1028,8 +645,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
   ];
 
   const sortedCategories = [...categories].sort((a, b) => a.label.localeCompare(b.label));
-
-  // Sort exercises alphabetically for the dropdown
   const sortedExercises = [...exercises].sort((a, b) => a.name.localeCompare(b.name));
 
   const searchFilteredExercises = searchQuery.trim()
@@ -1037,7 +652,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
         const categoryLabel = categories.find(c => c.value === exercise.category)?.label ?? '';
         const description = exercise.description ?? '';
         const lowerQuery = searchQuery.toLowerCase();
-
         return (
           exercise.name.toLowerCase().includes(lowerQuery) ||
           description.toLowerCase().includes(lowerQuery) ||
@@ -1053,7 +667,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
       }
       return;
     }
-
     if (searchFilteredExercises.length === 1) {
       setSelectedExerciseId(searchFilteredExercises[0].id);
     } else if (
@@ -1064,26 +677,20 @@ export function Stats({ workouts, exercises }: StatsProps) {
     }
   }, [searchFilteredExercises, searchQuery, selectedExerciseId, sortedExercises]);
 
-  // Get exercise comparison data
   const exerciseComparison = selectedExerciseId ? getExerciseYearComparison(selectedExerciseId) : null;
   const selectedExercise = exercises.find(e => e.id === selectedExerciseId);
-
-  // Get max chart data
   const maxChartData = selectedExerciseId ? generateChartData(selectedExerciseId) : [];
   const maxChartExercise = selectedExercise;
-
-  // Get sessions, volume and rest days data
   const sessionsPerMonth = selectedExerciseId ? getSessionsPerMonth(selectedExerciseId) : [];
   const volumePerSession = selectedExerciseId ? getVolumePerSession(selectedExerciseId) : [];
-  const restDaysBetweenSessions = selectedExerciseId ? getRestDaysBetweenSessions(selectedExerciseId) : [];
+  const consistencyData = useExerciseConsistencyData(workouts, selectedExerciseId, consistencyPeriod);
+  const yearComparisonData = useExerciseYearComparison(workouts, selectedExerciseId);
 
-  // Get month names for display
   const currentMonthName = new Date().toLocaleDateString('en-US', { month: 'long' });
   const lastMonthName = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toLocaleDateString('en-US', { month: 'long' });
   const currentYear = new Date().getFullYear();
   const lastYear = currentYear - 1;
 
-  // Find max percentage for chart scaling
   const maxThisYearPercentage = Math.max(...thisYearMonthlyData.map(d => d.percentage), 1);
   const maxLastYearPercentage = Math.max(...lastYearMonthlyData.map(d => d.percentage), 1);
   const maxChartPercentage = Math.max(maxThisYearPercentage, maxLastYearPercentage, 100);
@@ -1134,9 +741,7 @@ export function Stats({ workouts, exercises }: StatsProps) {
                 <div className="font-medium">
                   {day.date.toLocaleDateString('en-US', { weekday: 'short' })}
                 </div>
-                <div>
-                  {formatShortDate(day.date)}
-                </div>
+                <div>{formatShortDate(day.date)}</div>
               </div>
               <div className="flex-1 bg-solarized-base1/20 rounded-full h-6 relative overflow-hidden">
                 {day.sets > 0 && (
@@ -1165,7 +770,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
           <Dumbbell size={20} className="text-solarized-orange" />
           Exercise Charts
         </h3>
-
         <div className="space-y-4">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -1187,20 +791,15 @@ export function Stats({ workouts, exercises }: StatsProps) {
               </button>
             )}
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-solarized-base01 mb-2">
-              Exercise
-            </label>
+            <label className="block text-sm font-medium text-solarized-base01 mb-2">Exercise</label>
             <select
               value={selectedExerciseId}
               onChange={(e) => setSelectedExerciseId(e.target.value)}
               disabled={sortedExercises.length === 0}
               className="w-full p-3 border border-solarized-base1 rounded-lg focus:ring-2 focus:ring-solarized-orange focus:border-transparent bg-solarized-base3 text-solarized-base02 disabled:text-solarized-base01 disabled:bg-solarized-base2/60"
             >
-              {sortedExercises.length > 0 && (
-                <option value="">Choose an exercise...</option>
-              )}
+              {sortedExercises.length > 0 && <option value="">Choose an exercise...</option>}
               {sortedExercises.length === 0 ? (
                 <option value="" disabled>No exercises available</option>
               ) : searchQuery ? (
@@ -1217,13 +816,10 @@ export function Stats({ workouts, exercises }: StatsProps) {
                 sortedCategories.map(category => {
                   const categoryExercises = searchFilteredExercises.filter(exercise => exercise.category === category.value);
                   if (categoryExercises.length === 0) return null;
-
                   return (
                     <optgroup key={category.value} label={category.label}>
                       {categoryExercises.map(exercise => (
-                        <option key={exercise.id} value={exercise.id}>
-                          {exercise.name}
-                        </option>
+                        <option key={exercise.id} value={exercise.id}>{exercise.name}</option>
                       ))}
                     </optgroup>
                   );
@@ -1240,7 +836,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
           <Activity size={20} className="text-solarized-orange" />
           Exercise Year Comparison
         </h3>
-
         {exerciseComparison && selectedExercise && (
           <div className="space-y-4">
             <div className="text-center mb-4">
@@ -1251,9 +846,7 @@ export function Stats({ workouts, exercises }: StatsProps) {
                 {categories.find(c => c.value === selectedExercise.category)?.label}
               </span>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Current Year */}
               <div className="bg-solarized-blue/10 p-4 rounded-lg border border-solarized-blue/20">
                 <h5 className="font-semibold text-solarized-blue mb-3">{exerciseComparison.currentYear.year} (Current Year)</h5>
                 <div className="space-y-2">
@@ -1275,8 +868,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
                   </div>
                 </div>
               </div>
-
-              {/* Last Year */}
               <div className="bg-solarized-violet/10 p-4 rounded-lg border border-solarized-violet/20">
                 <h5 className="font-semibold text-solarized-violet mb-3">{exerciseComparison.lastYear.year} (Last Year)</h5>
                 <div className="space-y-2">
@@ -1299,17 +890,13 @@ export function Stats({ workouts, exercises }: StatsProps) {
                 </div>
               </div>
             </div>
-
-            {/* Comparison Summary */}
             <div className="bg-solarized-green/10 p-4 rounded-lg border border-solarized-green/20">
               <h5 className="font-semibold text-solarized-green mb-2">Year-over-Year Change</h5>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-solarized-base01">Total Reps: </span>
                   <span className={`font-medium ${
-                    exerciseComparison.currentYear.totalReps >= exerciseComparison.lastYear.totalReps 
-                      ? 'text-solarized-green' 
-                      : 'text-solarized-red'
+                    exerciseComparison.currentYear.totalReps >= exerciseComparison.lastYear.totalReps ? 'text-solarized-green' : 'text-solarized-red'
                   }`}>
                     {exerciseComparison.currentYear.totalReps >= exerciseComparison.lastYear.totalReps ? '+' : ''}
                     {exerciseComparison.currentYear.totalReps - exerciseComparison.lastYear.totalReps}
@@ -1318,9 +905,7 @@ export function Stats({ workouts, exercises }: StatsProps) {
                 <div>
                   <span className="text-solarized-base01">Reps per Day: </span>
                   <span className={`font-medium ${
-                    exerciseComparison.currentYear.repsPerDay >= exerciseComparison.lastYear.repsPerDay 
-                      ? 'text-solarized-green' 
-                      : 'text-solarized-red'
+                    exerciseComparison.currentYear.repsPerDay >= exerciseComparison.lastYear.repsPerDay ? 'text-solarized-green' : 'text-solarized-red'
                   }`}>
                     {exerciseComparison.currentYear.repsPerDay >= exerciseComparison.lastYear.repsPerDay ? '+' : ''}
                     {formatSingleDecimal(exerciseComparison.currentYear.repsPerDay - exerciseComparison.lastYear.repsPerDay)}
@@ -1330,11 +915,8 @@ export function Stats({ workouts, exercises }: StatsProps) {
             </div>
           </div>
         )}
-
         {!selectedExerciseId && (
-          <p className="text-solarized-base01 text-center py-8">
-            Select an exercise to see year-over-year comparison
-          </p>
+          <p className="text-solarized-base01 text-center py-8">Select an exercise to see year-over-year comparison</p>
         )}
       </div>
 
@@ -1360,14 +942,10 @@ export function Stats({ workouts, exercises }: StatsProps) {
                     style={{ width: `${(data.percentage / maxYearlyPercentage) * 100}%` }}
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-sm font-bold text-solarized-base02">
-                      {data.percentage}%
-                    </span>
+                    <span className="text-sm font-bold text-solarized-base02">{data.percentage}%</span>
                   </div>
                 </div>
-                <div className="w-24 text-xs text-solarized-base01 text-right">
-                  {data.workoutDays}/{data.totalDays} days
-                </div>
+                <div className="w-24 text-xs text-solarized-base01 text-right">{data.workoutDays}/{data.totalDays} days</div>
               </div>
             ))}
           </div>
@@ -1382,7 +960,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
           <LineChart size={20} className="text-solarized-violet" />
           Max Reps Over Time
         </h3>
-
         {maxChartData.length > 0 && maxChartExercise ? (
           <div className="space-y-4">
             <div className="text-center">
@@ -1396,8 +973,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
                 Current Max: <span className="font-bold text-solarized-violet">{maxChartData[maxChartData.length - 1]?.maxReps || 0} reps</span>
               </p>
             </div>
-
-            {/* Area Chart */}
             <div className="relative h-48 bg-solarized-base1/10 rounded-lg p-4 border border-solarized-base1/20">
               <svg className="w-full h-full" viewBox="0 0 400 160" preserveAspectRatio="none">
                 <defs>
@@ -1406,124 +981,67 @@ export function Stats({ workouts, exercises }: StatsProps) {
                     <stop offset="100%" stopColor="rgb(108, 113, 196)" stopOpacity="0.05" />
                   </linearGradient>
                 </defs>
-                
                 {maxChartData.length > 1 && (() => {
                   const maxReps = Math.max(...maxChartData.map(d => d.maxReps), 1);
                   const minDate = maxChartData[0].date.getTime();
                   const maxDate = maxChartData[maxChartData.length - 1].date.getTime();
                   const dateRange = maxDate - minDate || 1;
-                  
-                  // Create path for area
                   let pathData = '';
                   maxChartData.forEach((point, index) => {
                     const x = ((point.date.getTime() - minDate) / dateRange) * 400;
                     const y = 160 - ((point.maxReps / maxReps) * 140) - 10;
-                    
-                    if (index === 0) {
-                      pathData += `M ${x} 150 L ${x} ${y}`;
-                    } else {
-                      pathData += ` L ${x} ${y}`;
-                    }
+                    if (index === 0) pathData += `M ${x} 150 L ${x} ${y}`;
+                    else pathData += ` L ${x} ${y}`;
                   });
                   pathData += ` L 400 150 Z`;
-                  
-                  // Create line path
                   let linePath = '';
                   maxChartData.forEach((point, index) => {
                     const x = ((point.date.getTime() - minDate) / dateRange) * 400;
                     const y = 160 - ((point.maxReps / maxReps) * 140) - 10;
-                    
-                    if (index === 0) {
-                      linePath += `M ${x} ${y}`;
-                    } else {
-                      linePath += ` L ${x} ${y}`;
-                    }
+                    if (index === 0) linePath += `M ${x} ${y}`;
+                    else linePath += ` L ${x} ${y}`;
                   });
-                  
                   return (
                     <>
-                      {/* Area fill */}
-                      <path
-                        d={pathData}
-                        fill="url(#areaGradient)"
-                        stroke="none"
-                      />
-                      
-                      {/* Line */}
-                      <path
-                        d={linePath}
-                        fill="none"
-                        stroke="rgb(108, 113, 196)"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      
-                      {/* Data points */}
+                      <path d={pathData} fill="url(#areaGradient)" stroke="none" />
+                      <path d={linePath} fill="none" stroke="rgb(108, 113, 196)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       {maxChartData.map((point, index) => {
                         const x = ((point.date.getTime() - minDate) / dateRange) * 400;
                         const y = 160 - ((point.maxReps / maxReps) * 140) - 10;
-                        
-                        return (
-                          <circle
-                            key={index}
-                            cx={x}
-                            cy={y}
-                            r="4"
-                            fill="rgb(108, 113, 196)"
-                            stroke="white"
-                            strokeWidth="2"
-                          />
-                        );
+                        return <circle key={index} cx={x} cy={y} r="4" fill="rgb(108, 113, 196)" stroke="white" strokeWidth="2" />;
                       })}
                     </>
                   );
                 })()}
               </svg>
-              
-              {/* Y-axis labels */}
               <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-solarized-base01 py-2">
                 <span>{Math.max(...maxChartData.map(d => d.maxReps), 1)}</span>
                 <span>{Math.round(Math.max(...maxChartData.map(d => d.maxReps), 1) / 2)}</span>
                 <span>0</span>
               </div>
-              
-              {/* X-axis labels */}
               <div className="absolute bottom-0 left-0 right-0 flex justify-between text-xs text-solarized-base01 px-4 pb-1">
                 <span>{maxChartData[0]?.date.getFullYear()}</span>
                 <span>{maxChartData[maxChartData.length - 1]?.date.getFullYear()}</span>
               </div>
             </div>
-            
-            {/* Progress milestones */}
             <div className="space-y-2">
               <h5 className="font-medium text-solarized-base02">Progress Milestones</h5>
               <div className="max-h-32 overflow-y-auto space-y-1">
                 {getMaxRepsOverTime(selectedExerciseId).slice(-5).reverse().map((milestone, index) => (
                   <div key={index} className="flex items-center justify-between p-2 bg-solarized-violet/10 rounded border border-solarized-violet/20">
                     <span className="text-sm text-solarized-base02">
-                      {milestone.date.toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'short', 
-                        day: 'numeric' 
-                      })}
+                      {milestone.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                     </span>
-                    <span className="font-bold text-solarized-violet">
-                      {milestone.maxReps} reps
-                    </span>
+                    <span className="font-bold text-solarized-violet">{milestone.maxReps} reps</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
         ) : selectedExerciseId ? (
-          <p className="text-solarized-base01 text-center py-8">
-            No data available for this exercise in the last 3 years
-          </p>
+          <p className="text-solarized-base01 text-center py-8">No data available for this exercise in the last 3 years</p>
         ) : (
-          <p className="text-solarized-base01 text-center py-8">
-            Select an exercise to see max reps progression over time
-          </p>
+          <p className="text-solarized-base01 text-center py-8">Select an exercise to see max reps progression over time</p>
         )}
       </div>
 
@@ -1539,18 +1057,14 @@ export function Stats({ workouts, exercises }: StatsProps) {
               const maxSessions = Math.max(...sessionsPerMonth.map(d => d.count), 1);
               return (
                 <div key={index} className="flex items-center gap-3">
-                  <div className="w-8 text-xs text-solarized-base01 font-medium">
-                    {data.month}
-                  </div>
+                  <div className="w-8 text-xs text-solarized-base01 font-medium">{data.month}</div>
                   <div className="flex-1 bg-solarized-base1/20 rounded-full h-6 relative overflow-hidden">
                     <div
                       className="bg-solarized-green h-full rounded-full transition-all duration-300"
                       style={{ width: `${(data.count / maxSessions) * 100}%` }}
                     />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-xs font-medium text-solarized-base02">
-                        {data.count} sessions
-                      </span>
+                      <span className="text-xs font-medium text-solarized-base02">{data.count} sessions</span>
                     </div>
                   </div>
                 </div>
@@ -1558,13 +1072,9 @@ export function Stats({ workouts, exercises }: StatsProps) {
             })}
           </div>
         ) : selectedExerciseId ? (
-          <p className="text-solarized-base01 text-center py-8">
-            No sessions recorded for this exercise in the last 4 months
-          </p>
+          <p className="text-solarized-base01 text-center py-8">No sessions recorded for this exercise in the last 4 months</p>
         ) : (
-          <p className="text-solarized-base01 text-center py-8">
-            Select an exercise to see sessions per month
-          </p>
+          <p className="text-solarized-base01 text-center py-8">Select an exercise to see sessions per month</p>
         )}
       </div>
 
@@ -1580,18 +1090,14 @@ export function Stats({ workouts, exercises }: StatsProps) {
               const maxVolume = Math.max(...volumePerSession.map(d => d.volume), 1);
               return (
                 <div key={index} className="flex items-center gap-3">
-                  <div className="w-16 text-xs text-solarized-base01 font-medium">
-                    {formatShortDate(data.date)}
-                  </div>
+                  <div className="w-16 text-xs text-solarized-base01 font-medium">{formatShortDate(data.date)}</div>
                   <div className="flex-1 bg-solarized-base1/20 rounded-full h-6 relative overflow-hidden">
                     <div
                       className="bg-solarized-blue h-full rounded-full transition-all duration-300"
                       style={{ width: `${(data.volume / maxVolume) * 100}%` }}
                     />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-xs font-medium text-solarized-base02">
-                        {data.volume} total reps
-                      </span>
+                      <span className="text-xs font-medium text-solarized-base02">{data.volume} total reps</span>
                     </div>
                   </div>
                 </div>
@@ -1599,58 +1105,34 @@ export function Stats({ workouts, exercises }: StatsProps) {
             })}
           </div>
         ) : selectedExerciseId ? (
-          <p className="text-solarized-base01 text-center py-8">
-            No session volume data for the last 4 months
-          </p>
+          <p className="text-solarized-base01 text-center py-8">No session volume data for the last 4 months</p>
         ) : (
-          <p className="text-solarized-base01 text-center py-8">
-            Select an exercise to see volume per session
-          </p>
+          <p className="text-solarized-base01 text-center py-8">Select an exercise to see volume per session</p>
         )}
       </div>
 
-      {/* Rest Days Between Sessions Chart */}
+      {/* Exercise Consistency Section - NEW */}
       <div className="bg-solarized-base2 rounded-xl p-6 shadow-lg border border-solarized-base1">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-solarized-base02">
           <Timer size={20} className="text-solarized-orange" />
-          Rest Days Between Sessions (Last 4 Months)
+          Exercise Consistency
+          {selectedExercise && (
+            <span className="text-sm font-normal text-solarized-base01">- {selectedExercise.name}</span>
+          )}
         </h3>
-        {selectedExerciseId && restDaysBetweenSessions.length > 0 ? (
-          <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-            {restDaysBetweenSessions.map((data, index) => {
-              const maxDays = Math.max(...restDaysBetweenSessions.map(d => d.days), 1);
-              return (
-                <div key={index} className="flex items-center gap-3">
-                  <div className="w-16 text-xs text-solarized-base01 font-medium">
-                    {formatShortDate(data.date)}
-                  </div>
-                  <div className="flex-1 bg-solarized-base1/20 rounded-full h-6 relative overflow-hidden">
-                    <div
-                      className="bg-solarized-orange h-full rounded-full transition-all duration-300"
-                      style={{ width: `${(data.days / maxDays) * 100}%` }}
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-xs font-medium text-solarized-base02">
-                        {data.days} {data.days === 1 ? 'day' : 'days'} rest
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+        {selectedExerciseId ? (
+          <div className="space-y-6">
+            <ExerciseConsistencyChart
+              data={consistencyData}
+              period={consistencyPeriod}
+              onPeriodChange={setConsistencyPeriod}
+            />
+            <div className="border-t border-solarized-base1 pt-6">
+              <ExerciseConsistencyComparison data={yearComparisonData} />
+            </div>
           </div>
-        ) : selectedExerciseId && getExerciseSessions(selectedExerciseId).length > 0 ? (
-          <p className="text-solarized-base01 text-center py-8">
-            Need at least 2 sessions to calculate rest days
-          </p>
-        ) : selectedExerciseId ? (
-          <p className="text-solarized-base01 text-center py-8">
-            No session data for the last 4 months
-          </p>
         ) : (
-          <p className="text-solarized-base01 text-center py-8">
-            Select an exercise to see rest days between sessions
-          </p>
+          <p className="text-solarized-base01 text-center py-8">Select an exercise to see consistency analysis</p>
         )}
       </div>
 
@@ -1663,23 +1145,17 @@ export function Stats({ workouts, exercises }: StatsProps) {
         <div className="space-y-3">
           {thisYearMonthlyData.map((data, index) => (
             <div key={index} className="flex items-center gap-3">
-              <div className="w-8 text-xs text-solarized-base01 font-medium">
-                {data.month}
-              </div>
+              <div className="w-8 text-xs text-solarized-base01 font-medium">{data.month}</div>
               <div className="flex-1 bg-solarized-base1/20 rounded-full h-6 relative overflow-hidden">
                 <div
                   className="bg-solarized-blue h-full rounded-full transition-all duration-300"
                   style={{ width: `${(data.percentage / maxChartPercentage) * 100}%` }}
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs font-medium text-solarized-base02">
-                    {data.percentage}%
-                  </span>
+                  <span className="text-xs font-medium text-solarized-base02">{data.percentage}%</span>
                 </div>
               </div>
-              <div className="w-20 text-xs text-solarized-base01 text-right">
-                {data.workoutDays}/{data.totalDays} days
-              </div>
+              <div className="w-20 text-xs text-solarized-base01 text-right">{data.workoutDays}/{data.totalDays} days</div>
             </div>
           ))}
         </div>
@@ -1693,23 +1169,17 @@ export function Stats({ workouts, exercises }: StatsProps) {
         <div className="space-y-3">
           {lastYearMonthlyData.map((data, index) => (
             <div key={index} className="flex items-center gap-3">
-              <div className="w-8 text-xs text-solarized-base01 font-medium">
-                {data.month}
-              </div>
+              <div className="w-8 text-xs text-solarized-base01 font-medium">{data.month}</div>
               <div className="flex-1 bg-solarized-base1/20 rounded-full h-6 relative overflow-hidden">
                 <div
                   className="bg-solarized-violet h-full rounded-full transition-all duration-300"
                   style={{ width: `${(data.percentage / maxChartPercentage) * 100}%` }}
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs font-medium text-solarized-base02">
-                    {data.percentage}%
-                  </span>
+                  <span className="text-xs font-medium text-solarized-base02">{data.percentage}%</span>
                 </div>
               </div>
-              <div className="w-20 text-xs text-solarized-base01 text-right">
-                {data.workoutDays}/{data.totalDays} days
-              </div>
+              <div className="w-20 text-xs text-solarized-base01 text-right">{data.workoutDays}/{data.totalDays} days</div>
             </div>
           ))}
         </div>
@@ -1784,68 +1254,6 @@ export function Stats({ workouts, exercises }: StatsProps) {
         )}
       </div>
 
-      {/* Category Consistency - Last 4 Months */}
-      <div className="bg-solarized-base2 rounded-xl p-6 shadow-lg border border-solarized-base1">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-solarized-base02">
-          <Repeat size={20} className="text-solarized-green" />
-          Category Consistency - Last 4 Months
-        </h3>
-        {(() => {
-          try {
-            if (!Array.isArray(categoryConsistencyStats) || categoryConsistencyStats.length === 0) {
-              return (
-                <div className="flex items-center justify-center bg-solarized-base1/10 rounded-lg p-8">
-                  <span className="text-sm text-solarized-base01 text-center">
-                    Insufficient data for consistency analysis (need at least 2 workouts per category in the last 4 months)
-                  </span>
-                </div>
-              );
-            }
-
-            // Safely calculate max value
-            const maxMedianRestDays = Math.max(
-              ...categoryConsistencyStats.map(s => typeof s.medianRestDays === 'number' ? s.medianRestDays : 0),
-              1
-            );
-
-            const chartData = categoryConsistencyStats.map(stat => {
-              const category = categories.find(c => c.value === stat.category);
-              return {
-                label: category?.label || stat.category || 'Unknown',
-                value: typeof stat.medianRestDays === 'number' ? stat.medianRestDays : 0,
-                maxValue: maxMedianRestDays,
-                color: category?.bgColor || '#93a1a1',
-                workoutCount: typeof stat.workoutCount === 'number' ? stat.workoutCount : 0,
-                pattern: stat.pattern || 'Stable',
-                range: stat.range || 'N/A',
-                trendData: categoryConsistencyTrends[stat.category] || {
-                  direction: 'insufficient',
-                  percentageChange: 0,
-                  recentMedian: 0,
-                  pastMedian: 0
-                }
-              };
-            });
-
-            return (
-              <BarChart
-                data={chartData}
-                emptyMessage="Insufficient data for consistency analysis (need at least 2 workouts per category in the last 4 months)"
-              />
-            );
-          } catch (error) {
-            console.error('Error rendering consistency chart:', error);
-            return (
-              <div className="flex items-center justify-center bg-solarized-base1/10 rounded-lg p-8">
-                <span className="text-sm text-solarized-base01 text-center">
-                  Unable to display consistency chart. Please check console for details.
-                </span>
-              </div>
-            );
-          }
-        })()}
-      </div>
-
       {/* Exercise Breakdown with Year Filter */}
       <div className="bg-solarized-base2 rounded-xl p-6 shadow-lg border border-solarized-base1">
         <div className="flex items-center justify-between mb-4">
@@ -1860,9 +1268,7 @@ export function Stats({ workouts, exercises }: StatsProps) {
               className="px-3 py-2 border border-solarized-base1 rounded-lg focus:ring-2 focus:ring-solarized-blue focus:border-transparent bg-solarized-base3 text-solarized-base02"
             >
               {availableYears.map(year => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
+                <option key={year} value={year}>{year}</option>
               ))}
             </select>
           )}
