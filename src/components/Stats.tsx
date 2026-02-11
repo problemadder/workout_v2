@@ -1113,11 +1113,11 @@ export function Stats({ workouts, exercises }: StatsProps) {
 
       {/* Exercise Consistency Section - NEW */}
       <div className="bg-solarized-base2 rounded-xl p-6 shadow-lg border border-solarized-base1">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-solarized-base02">
+        <h3 className="text-lg font-semibold mb-4 flex flex-wrap items-center gap-2 text-solarized-base02">
           <Timer size={20} className="text-solarized-orange" />
           Exercise Consistency
           {selectedExercise && (
-            <span className="text-sm font-normal text-solarized-base01">- {selectedExercise.name}</span>
+            <span className="text-sm font-normal text-solarized-base01 break-words">- {selectedExercise.name}</span>
           )}
         </h3>
         {selectedExerciseId ? (
